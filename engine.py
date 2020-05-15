@@ -1,6 +1,6 @@
 import tcod as libtcod
 
-from input_handlers import handle_keys
+from input_handlers import handle_keys, handle_mouse
 from entity import Entity
 from game_map import GameMap
 from components.fighter import Fighter
@@ -14,7 +14,7 @@ from globals import GameStates, RenderOrder, CONFIG
 def component(name):
     # TODO: Change this into a proper factory
     component_map = {
-        "PLAYER"    : Fighter(hp=30, defense=2, power=5),
+        "PLAYER"    : Fighter(hp=60, defense=2, power=5),
         "ORC"       : Fighter(hp=10, defense=0, power=3),
         "TROLL"     : Fighter(hp=16, defense=1, power=4),
         "BASIC"     : BasicMonster()
@@ -63,11 +63,13 @@ def main():
 
         game_state = GameStates.PLAYERS_TURN
         previous_game_state = game_state
+        targeting_item = None
         redraw = False
 
         while True:
             # TODO: Maybe there is an equivalent of Keymap as we have in SDL here?
             key_pressed = None
+            mouse_moved = None
             mouse_clicked = None
             for event in libtcod.event.wait():
                 #libtcod.console_flush()
@@ -76,7 +78,10 @@ def main():
                 if event.type == "KEYDOWN":
                     key_pressed = event.sym
                 if event.type == "MOUSEMOTION":
+                    mouse_moved = event
+                if event.type == "MOUSEBUTTONDOWN":
                     mouse_clicked = event
+
 
             if fov_recompute:
                 recompute_fov(fov_map, player.x, player.y, CONFIG)
@@ -86,7 +91,7 @@ def main():
                        CONFIG.get('WIDTH'),
                        CONFIG.get('HEIGHT'),
                        colors,
-                       mouse_clicked,
+                       mouse_moved,
                        game_state,
                        redraw)
             redraw = True
@@ -95,17 +100,22 @@ def main():
             libtcod.console_flush()
             clear_all(con, entities)
 
-            action = handle_keys(key_pressed)
-
+            action = handle_keys(key_pressed, game_state) if key_pressed is not None else {}
+            mouse_action = handle_mouse(mouse_clicked) if mouse_clicked is not None else {}
             player_turn_result = []
 
             exit = action.get('exit')
             move = action.get('move')
             pickup = action.get('pickup')
             show_inventory = action.get('show_inventory')
+            inventory_index = action.get('inventory_index')
+            drop_inventory = action.get('drop_inventory')
+            targeting_cancelled = action.get('targeting_cancelled')
+
+            left_click = mouse_action.get('left_click')
+            right_click = mouse_action.get('right_click')
 
             if show_inventory:
-                libtcod.console_flush()
                 if game_state == GameStates.INVENTORY:
                     game_state = previous_game_state
                     redraw = True
@@ -113,11 +123,33 @@ def main():
                     previous_game_state = game_state
                     game_state = GameStates.INVENTORY
 
+            if drop_inventory:
+                if game_state == GameStates.DROP_INVENTORY:
+                    game_state = previous_game_state
+                    redraw = True
+                else:
+                    previous_game_state = game_state
+                    game_state = GameStates.DROP_INVENTORY
+
+            if targeting_cancelled:
+                game_state = previous_game_state
+                message_log.add_message(Message('Targeting cancelled'))
+
+            if inventory_index is not None and previous_game_state != GameStates.PLAYER_DEAD and inventory_index < len(player.inventory.items):
+                item = player.inventory.items[inventory_index]
+                if game_state == GameStates.INVENTORY:
+                    player_turn_result.extend(player.inventory.use(item, entities=entities, fov_map=fov_map))
+                elif game_state == GameStates.DROP_INVENTORY:
+                    player_turn_result.extend(player.inventory.drop(item))
+                
             if exit:
                 if game_state == GameStates.INVENTORY:
                     game_state = previous_game_state
                     redraw = True
-                return True
+                if game_state == GameStates.TARGETING:
+                    player_turn_result.append({'targeting_cancelled': True})
+                else:
+                    return True
            
             if move and game_state == GameStates.PLAYERS_TURN:
                 dx, dy = move
@@ -143,10 +175,24 @@ def main():
                         Message('There is nothing here to pickup', libtcod.yellow)
                     )
 
+
+            if game_state == GameStates.TARGETING:
+                if left_click:
+                    target_x, target_y = left_click
+                    item_use_results = player.inventory.use(targeting_item, entities=entities, fov_map=fov_map,
+                                                            target_x=target_x, target_y=target_y)
+                    player_turn_result.extend(item_use_results)
+                elif right_click:
+                    player_turn_result.append({'targeting_cancelled': True})
+
             for result in player_turn_result:
                 message = result.get('message')
                 dead_entity = result.get('dead')
                 item_added = result.get('item_added')
+                item_consumed = result.get('consumed')
+                item_dropped = result.get('item_dropped')
+                targeting = result.get('targeting')
+                targeting_cancelled = result.get('targeting_cancelled')
                 if message:
                     message_log.add_message(message)
                 if dead_entity:
@@ -158,6 +204,21 @@ def main():
                 if item_added:
                     entities.remove(item_added)
                     game_state = GameStates.ENEMY_TURN
+                if item_consumed:
+                    game_state = GameStates.ENEMY_TURN
+                if item_dropped:
+                    entities.append(item_dropped)
+                    game_state = GameStates.ENEMY_TURN
+                if targeting:
+                    previous_game_state = GameStates.PLAYERS_TURN
+                    game_state = GameStates.TARGETING
+                    targeting_item = targeting
+                    message_log.add_message(targeting_item.item.targeting_message)
+                if targeting_cancelled:
+                    game_state = previous_game_state
+                    message_log.add_message(Message('Targeting Cancelled'))
+
+
             
             if game_state == GameStates.ENEMY_TURN:
                 for entity in entities:
@@ -218,10 +279,10 @@ def clear_all(con, entities):
     for e in entities:
         libtcod.console_put_char(con, e.x, e.y, ' ', libtcod.BKGND_NONE)
 
-def get_names_under_mouse(mouse_clicked, entities, fov_map):
-    if not mouse_clicked:
+def get_names_under_mouse(mouse_moved, entities, fov_map):
+    if not mouse_moved:
         return []
-    (x, y) = (mouse_clicked.tile[0], mouse_clicked.tile[1])
+    (x, y) = (mouse_moved.tile[0], mouse_moved.tile[1])
     names = [entity.name for entity in entities
             if entity.x == x and entity.y == y and libtcod.map_is_in_fov(fov_map, entity.x, entity.y)]
     names = ', '.join(names)
@@ -240,7 +301,7 @@ def render_bar(panel, x, y, total_width, name, value, maximum, bar_color, back_c
 
 # TODO: I need to get rid of this cluster of parameters... God...
 def render_all(con, panel, message_log, entities, player, game_map, fov_map, 
-    fov_recompute, width, height, colors, mouse_clicked, game_state, redraw):
+    fov_recompute, width, height, colors, mouse_moved, game_state, redraw):
     if fov_recompute:
         for y in range(game_map.height):
             for x in range(game_map.width):
@@ -253,11 +314,15 @@ def render_all(con, panel, message_log, entities, player, game_map, fov_map,
                     else:
                         libtcod.console_set_char_background(con, x, y, colors.get('light_ground'), libtcod.BKGND_SET)
                     game_map.tiles[x][y].explored = True
+                    if redraw:
+                        libtcod.console_put_char(con, x, y, ' ', libtcod.BKGND_NONE)
                 elif game_map.tiles[x][y].explored:
                     if wall:
                         libtcod.console_set_char_background(con, x, y, colors.get('dark_wall'), libtcod.BKGND_SET)
                     else:
                         libtcod.console_set_char_background(con, x, y, colors.get('dark_ground'), libtcod.BKGND_SET)
+                    if redraw:
+                        libtcod.console_put_char(con, x, y, ' ', libtcod.BKGND_NONE)
                 elif redraw:
                     libtcod.console_put_char(con, x, y, ' ', libtcod.BKGND_NONE)
 
@@ -281,15 +346,18 @@ def render_all(con, panel, message_log, entities, player, game_map, fov_map,
                libtcod.light_red, libtcod.darker_red)
 
     libtcod.console_set_default_foreground(panel, libtcod.gray)
-    names = get_names_under_mouse(mouse_clicked, entities, fov_map)
+    names = get_names_under_mouse(mouse_moved, entities, fov_map)
     if len(names) > 0:
         libtcod.console_print_ex(panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, names)
 
     libtcod.console_blit(panel, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('PANEL_HEIGHT'), 0, 0, CONFIG.get('PANEL_Y'))
 
-    if game_state == GameStates.INVENTORY:
-        inventory_menu(con, 'Press the key next to an item to use it or I again to leave\n',
-                       player.inventory, 50, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'))
+    if game_state in (GameStates.INVENTORY, GameStates.DROP_INVENTORY):
+        if game_state == GameStates.INVENTORY:
+            title = 'Press the key next to an item to use it or I again to leave\n'
+        else:
+            title = 'Press the key next to an item to drop it or O again to leave\n'
+        inventory_menu(con, title, player.inventory, 50, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'))
 
 if  __name__ == '__main__':
     main()

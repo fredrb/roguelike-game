@@ -3,6 +3,9 @@ from tile import Tile
 from rectangle import Rect
 from entity import Entity
 from components.item import Item
+from item_functions import heal, cast_lightning, cast_fireball, cast_confuse
+
+from message_log import Message
 
 from random import randint
 from globals import RenderOrder
@@ -65,10 +68,37 @@ class GameMap:
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
             if not any([entity for entity in entities if entity.x == x and entity.y == y]):
-                item_component = Item()
-                item = Entity(x, y, '!', libtcod.violet, 'Healing Potion', 
-                    render_order=RenderOrder.ITEM,
-                    item=item_component)
+                # Item drop roll
+                item_chance = randint(0, 100)
+                if item_chance < 30:
+                    item_component = Item(use_function=heal, amount=4)
+                    item = Entity(x, y, '!', libtcod.violet, 'Healing Potion', 
+                        render_order=RenderOrder.ITEM,
+                        item=item_component)
+                elif item_chance < 80:
+                    msg=Message('Click on an enemy to confuse it, or right-click to cancel', libtcod.light_cyan)
+                    item_component = Item(use_function=cast_confuse,
+                        targeting=True,
+                        targeting_message=msg)
+                    item = Entity(x, y, '#', libtcod.light_pink, 'Confusion Scroll',
+                        render_order=RenderOrder.ITEM,
+                        item=item_component)
+
+                elif item_chance < 90:
+                    msg=Message('Left-click to cast, right-click to cancel', libtcod.light_cyan)
+                    item_component = Item(use_function=cast_fireball, 
+                        targeting=True,
+                        targeting_message=msg,
+                        damage=60, 
+                        radius=3)
+                    item = Entity(x, y, '#', libtcod.red, 'Fireball Scroll',
+                        render_order=RenderOrder.ITEM,
+                        item=item_component)
+                else:
+                    item_component = Item(use_function=cast_lightning, damage=20, maximum_range=5)
+                    item = Entity(x, y, '#', libtcod.yellow, 'Lightning Scroll',
+                        render_order=RenderOrder.ITEM,
+                        item=item_component)
                 entities.append(item)
 
 
