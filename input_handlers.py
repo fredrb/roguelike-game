@@ -17,4 +17,8 @@ def handle_keys(key):
         return {'move': (-1, 1)}
     elif key == ord('c'):
         return {'move': (1, 1)}
+    elif key == ord('g'):
+        return {'pickup': True}
+    elif key == ord('i'):
+        return {'show_inventory': True}
     return {}

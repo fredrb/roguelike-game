@@ -4,6 +4,7 @@ class GameStates(Enum):
     PLAYERS_TURN = 1
     ENEMY_TURN = 2
     PLAYER_DEAD = 3
+    INVENTORY = 4
 
 class RenderOrder(Enum):
     CORPSE = 1
@@ -33,6 +34,7 @@ CONFIG = {
     "ROOM_MIN_SIZE"     : 6,
     "MAX_ROOMS"         : 30,
     "MAX_MONSTERS"      : 3,
+    "MAX_ITEMS"         : 2,
 
     # Field of View
     "FOV_ALGORITHM"     : 1,

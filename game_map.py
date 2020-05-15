@@ -2,6 +2,7 @@ import tcod as libtcod
 from tile import Tile
 from rectangle import Rect
 from entity import Entity
+from components.item import Item
 
 from random import randint
 from globals import RenderOrder
@@ -40,8 +41,10 @@ class GameMap:
             self.tiles[x][y].blocked = False
             self.tiles[x][y].block_sight = False
 
-    def place_entities(self, room, entities, max_monsters, component):
+    def place_entities(self, room, entities, max_monsters, max_items, component):
         number_of_monsters = randint(0, max_monsters)
+        number_of_items = randint(0, max_items)
+
         for i in range(number_of_monsters):
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
@@ -58,8 +61,18 @@ class GameMap:
                                      ai=component("BASIC"))
                 entities.append(monster)
 
+        for i in range(number_of_items):
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            if not any([entity for entity in entities if entity.x == x and entity.y == y]):
+                item_component = Item()
+                item = Entity(x, y, '!', libtcod.violet, 'Healing Potion', 
+                    render_order=RenderOrder.ITEM,
+                    item=item_component)
+                entities.append(item)
 
-    def make_map(self, max_rooms, min_size, max_size, player, entities, max_monsters, components):
+
+    def make_map(self, max_rooms, min_size, max_size, player, entities, max_monsters, max_items, components):
         rooms = []
         num_rooms = 0
         for r in range(max_rooms):
@@ -86,7 +99,7 @@ class GameMap:
                     else:
                         self.create_tunnel(prev_y, new_y, prev_x, False)
                         self.create_tunnel(prev_x, new_x, new_y, True)
-                self.place_entities(new_room, entities, max_monsters, components)
+                self.place_entities(new_room, entities, max_monsters, max_items, components)
                 rooms.append(new_room)
                 num_rooms += 1
     

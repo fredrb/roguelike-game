@@ -5,6 +5,8 @@ from entity import Entity
 from game_map import GameMap
 from components.fighter import Fighter
 from components.ai import BasicMonster
+from components.inventory import Inventory
+from menu import inventory_menu
 from message_log import MessageLog, Message
 
 from globals import GameStates, RenderOrder, CONFIG
@@ -20,14 +22,19 @@ def component(name):
     return component_map[name]
 
 def main():
-    player = Entity(0, 0, '@', libtcod.black, 'Player', True, render_order=RenderOrder.ACTOR, fighter=component("PLAYER"))
+    inventory_component = Inventory(26)
+    player = Entity(0, 0, '@', libtcod.black, 'Player', True, 
+        render_order=RenderOrder.ACTOR, 
+        inventory=inventory_component,
+        fighter=component("PLAYER"))
     entities = [player]
 
     colors = {
         'dark_wall': libtcod.Color(18, 18, 20),
         'dark_ground': libtcod.Color(50, 50, 50),
         'light_wall': libtcod.Color(130, 130, 130),
-        'light_ground': libtcod.Color(200, 200, 200)
+        'light_ground': libtcod.Color(200, 200, 200),
+        'black': libtcod.Color(0, 0, 0)
     }
 
     libtcod.console_set_custom_font('arial10x10.png', 
@@ -44,6 +51,7 @@ def main():
             player, 
             entities, 
             CONFIG.get('MAX_MONSTERS'),
+            CONFIG.get('MAX_ITEMS'),
             component)
 
         fov_recompute = True
@@ -54,6 +62,8 @@ def main():
                                  CONFIG.get("MESSAGE_HEIGHT"))
 
         game_state = GameStates.PLAYERS_TURN
+        previous_game_state = game_state
+        redraw = False
 
         while True:
             # TODO: Maybe there is an equivalent of Keymap as we have in SDL here?
@@ -76,19 +86,39 @@ def main():
                        CONFIG.get('WIDTH'),
                        CONFIG.get('HEIGHT'),
                        colors,
-                       mouse_clicked)
+                       mouse_clicked,
+                       game_state,
+                       redraw)
+            redraw = True
             fov_compute = False
             libtcod.console_blit(con, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'), 0, 0, 0)
             libtcod.console_flush()
             clear_all(con, entities)
 
             action = handle_keys(key_pressed)
-            if action.get('exit'):
-                return True
 
             player_turn_result = []
 
+            exit = action.get('exit')
             move = action.get('move')
+            pickup = action.get('pickup')
+            show_inventory = action.get('show_inventory')
+
+            if show_inventory:
+                libtcod.console_flush()
+                if game_state == GameStates.INVENTORY:
+                    game_state = previous_game_state
+                    redraw = True
+                else:
+                    previous_game_state = game_state
+                    game_state = GameStates.INVENTORY
+
+            if exit:
+                if game_state == GameStates.INVENTORY:
+                    game_state = previous_game_state
+                    redraw = True
+                return True
+           
             if move and game_state == GameStates.PLAYERS_TURN:
                 dx, dy = move
                 dest_x = player.x + dx
@@ -102,10 +132,21 @@ def main():
                         player.move(dx, dy)
                         fov_recompute = True
                     game_state = GameStates.ENEMY_TURN
+            elif pickup and game_state == GameStates.PLAYERS_TURN:
+                for entity in entities:
+                    if entity.item and entity.x == player.x and entity.y == player.y:
+                        pickup_results = player.inventory.add_item(entity)
+                        player_turn_result.extend(pickup_results)
+                        break
+                else:
+                    message_log.add_message(
+                        Message('There is nothing here to pickup', libtcod.yellow)
+                    )
 
             for result in player_turn_result:
                 message = result.get('message')
                 dead_entity = result.get('dead')
+                item_added = result.get('item_added')
                 if message:
                     message_log.add_message(message)
                 if dead_entity:
@@ -114,6 +155,9 @@ def main():
                     else:
                         message = kill_monster(dead_entity)
                     message_log.add_message(message)
+                if item_added:
+                    entities.remove(item_added)
+                    game_state = GameStates.ENEMY_TURN
             
             if game_state == GameStates.ENEMY_TURN:
                 for entity in entities:
@@ -194,7 +238,9 @@ def render_bar(panel, x, y, total_width, name, value, maximum, bar_color, back_c
     libtcod.console_print_ex(panel, int(x + total_width / 2), y, libtcod.BKGND_NONE, libtcod.CENTER,
                              '%s: %i/%i' % (name, value, maximum))
 
-def render_all(con, panel, message_log, entities, player, game_map, fov_map, fov_recompute, width, height, colors, mouse_clicked):
+# TODO: I need to get rid of this cluster of parameters... God...
+def render_all(con, panel, message_log, entities, player, game_map, fov_map, 
+    fov_recompute, width, height, colors, mouse_clicked, game_state, redraw):
     if fov_recompute:
         for y in range(game_map.height):
             for x in range(game_map.width):
@@ -212,11 +258,16 @@ def render_all(con, panel, message_log, entities, player, game_map, fov_map, fov
                         libtcod.console_set_char_background(con, x, y, colors.get('dark_wall'), libtcod.BKGND_SET)
                     else:
                         libtcod.console_set_char_background(con, x, y, colors.get('dark_ground'), libtcod.BKGND_SET)
+                elif redraw:
+                    libtcod.console_put_char(con, x, y, ' ', libtcod.BKGND_NONE)
 
     for e in sorted(entities, key=lambda x: x.render_order.value):
         if libtcod.map_is_in_fov(fov_map, e.x, e.y):
             libtcod.console_set_default_foreground(con, e.color)
             libtcod.console_put_char(con, e.x, e.y, e.char, libtcod.BKGND_NONE)
+
+    con.blit(con, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'), 0, 0, 0)
+    #libtcod.console_blit(con, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'), 0, 0, 0)
 
     libtcod.console_set_default_background(panel, libtcod.black)
     libtcod.console_clear(panel)
@@ -235,6 +286,10 @@ def render_all(con, panel, message_log, entities, player, game_map, fov_map, fov
         libtcod.console_print_ex(panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, names)
 
     libtcod.console_blit(panel, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('PANEL_HEIGHT'), 0, 0, CONFIG.get('PANEL_Y'))
+
+    if game_state == GameStates.INVENTORY:
+        inventory_menu(con, 'Press the key next to an item to use it or I again to leave\n',
+                       player.inventory, 50, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'))
 
 if  __name__ == '__main__':
     main()
