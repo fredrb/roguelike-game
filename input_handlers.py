@@ -5,6 +5,15 @@ from globals import GameStates
 # Show inventory -> Toggle Inventory
 # Exit -> Leave Game
 
+def handle_main_menu(key):
+    if key == ord('a'):
+        return {'new_game': True}
+    if key == ord('b'):
+        return {'load_game': True}
+    if key == ord('c'):
+        return {'exit': True}
+    return {}
+
 def handle_keys(key, game_state):
     if game_state == GameStates.PLAYERS_TURN:
         return handle_player_turn(key)
@@ -14,7 +23,29 @@ def handle_keys(key, game_state):
         return handle_targeting_keys(key)
     if game_state in (GameStates.INVENTORY, GameStates.DROP_INVENTORY):
         return handle_player_inventory(key)
+    if game_state == GameStates.LEVEL_UP:
+        return handle_level_up_menu(key)
+    if game_state == GameStates.CHARACTER_SCREEN:
+        return handle_character_menu(key)
     return {}
+
+def handle_character_menu(key):
+    if key == 27:
+        return {'exit': True}
+    if key == ord('f'):
+        return {'show_character_screen': True}
+    return {}
+
+def handle_level_up_menu(key):
+    if key == ord('a'):
+        return {'level_up': 'hp'}
+    elif key == ord('b'):
+        return {'level_up': 'str'}
+    elif key == ord('c'):
+        return {'level_up': 'agi'}
+    return {}
+
+
 
 def handle_targeting_keys(key):
     if key == 27: # ESC
@@ -49,6 +80,8 @@ def handle_player_dead(key):
         return {'exit': True}
 
 def handle_player_turn(key):
+    if key:
+        print('Key: %i' % key)
     if key == ord('w'):
         return {'move': (0, -1)}
     elif key == ord('s'):
@@ -65,10 +98,16 @@ def handle_player_turn(key):
         return {'move': (-1, 1)}
     elif key == ord('c'):
         return {'move': (1, 1)}
+    elif key == 13:
+        return {'take_stairs': True}
+    elif key == ord('f'):
+        return {'show_character_screen': True}
     elif key == ord('g'):
         return {'pickup': True}
     elif key == ord('i'):
         return {'show_inventory': True}
     elif key == ord('o'):
         return {'drop_inventory': True}
+    elif key == 27:
+        return {'exit': True}
     return {}

@@ -2,6 +2,7 @@ import math
 import tcod as libtcod
 
 from globals import RenderOrder
+from components.item import Item
 
 class Entity:
     """
@@ -11,6 +12,10 @@ class Entity:
         fighter=None, 
         ai=None,
         item=None,
+        stairs=None,
+        level=None,
+        equipment=None,
+        equippable=None,
         inventory=None):
 
         self.x = x
@@ -24,6 +29,10 @@ class Entity:
         self.item = item
         self.inventory = inventory
         self.render_order = render_order
+        self.stairs = stairs
+        self.equipment = equipment
+        self.equippable = equippable
+        self.level = level
 
         if self.fighter:
             self.fighter.owner = self
@@ -33,6 +42,18 @@ class Entity:
             self.item.owner = self
         if self.inventory:
             self.inventory.owner = self
+        if self.stairs:
+            self.stairs.owner = self
+        if self.level:
+            self.level.owner = self
+        if self.equipment:
+            self.equipment.owner = self
+        if self.equippable:
+            self.equippable.owner = self
+            if not self.item:
+                item = Item()
+                self.item = item
+                self.item.owner = self
 
     def move(self, dx, dy):
         self.x += dx

@@ -1,4 +1,5 @@
-from enum import Enum
+from enum import Enum, auto
+import tcod as libtcod
 
 class GameStates(Enum):
     PLAYERS_TURN = 1
@@ -7,18 +8,28 @@ class GameStates(Enum):
     INVENTORY = 4
     DROP_INVENTORY = 5
     TARGETING = 6
+    LEVEL_UP = 7
+    CHARACTER_SCREEN = 8
 
 class RenderOrder(Enum):
-    CORPSE = 1
-    ITEM = 2
-    ACTOR = 3
+    STAIRS = auto()
+    CORPSE = auto()
+    ITEM = auto()
+    ACTOR = auto()
+
+class EquipmentSlots(Enum):
+    MAIN_HAND = auto()
+    OFF_HAND = auto()
+
+
+
 
 CONFIG = {
     "WIDTH"             : 80,
     "HEIGHT"            : 50,
     "MAP_WIDTH"         : 80,
     "MAP_HEIGHT"        : 43,
-    "TITLE"             : "Example Roguelike Game",
+    "TITLE"             : "Kenya Survival",
 
     # UI - HP Bar
     "BAR_WIDTH"         : 20,
@@ -38,9 +49,21 @@ CONFIG = {
     "MAX_MONSTERS"      : 3,
     "MAX_ITEMS"         : 2,
 
+    # Render
+    "FONT_PATH"              : "dejavu16x16_gs_tc.png",
+
     # Field of View
     "FOV_ALGORITHM"     : 1,
     "FOV_LIGHT_WALLS"   : True,
-    "FOV_RADIUS"        : 10
+    "FOV_RADIUS"        : 10,
+
+    "COLORS": {
+        'dark_wall': libtcod.Color(18, 18, 20),
+        'dark_ground': libtcod.Color(50, 50, 50),
+        'light_wall': libtcod.Color(130, 130, 130),
+        'light_ground': libtcod.Color(200, 200, 200),
+        'black': libtcod.Color(0, 0, 0)
+    }
+
 }
 

@@ -3,6 +3,9 @@ from tile import Tile
 from rectangle import Rect
 from entity import Entity
 from components.item import Item
+from components.stairs import Stairs
+from components.equipment import EquipmentSlots
+from components.equippable import Equippable
 from item_functions import heal, cast_lightning, cast_fireball, cast_confuse
 
 from message_log import Message
@@ -11,10 +14,12 @@ from random import randint
 from globals import RenderOrder
 
 class GameMap:
-    def __init__(self, width, height):
+    def __init__(self, width, height, dungeon_level=1):
         self.width = width
         self.height = height
         self.tiles = self.initialize_tiles()
+
+        self.dungeon_level = dungeon_level
 
     def is_blocked(self, x, y):
         return self.tiles[x][y].blocked
@@ -70,12 +75,19 @@ class GameMap:
             if not any([entity for entity in entities if entity.x == x and entity.y == y]):
                 # Item drop roll
                 item_chance = randint(0, 100)
-                if item_chance < 30:
+                if item_chance < 50:
+                    print('Adding sword')
+                    equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=3)
+                    item = Entity(x, y, '/', libtcod.sky, 'Sword', equippable=equippable_component)
+                elif item_chance < 90:
+                    equippable_component = Equippable(EquipmentSlots.OFF_HAND, defense_bonus=1)
+                    item = Entity(x, y, '[', libtcod.darker_orange, 'Shield', equippable=equippable_component)
+                elif item_chance < 91:
                     item_component = Item(use_function=heal, amount=4)
                     item = Entity(x, y, '!', libtcod.violet, 'Healing Potion', 
                         render_order=RenderOrder.ITEM,
                         item=item_component)
-                elif item_chance < 80:
+                elif item_chance < 92:
                     msg=Message('Click on an enemy to confuse it, or right-click to cancel', libtcod.light_cyan)
                     item_component = Item(use_function=cast_confuse,
                         targeting=True,
@@ -83,8 +95,7 @@ class GameMap:
                     item = Entity(x, y, '#', libtcod.light_pink, 'Confusion Scroll',
                         render_order=RenderOrder.ITEM,
                         item=item_component)
-
-                elif item_chance < 90:
+                elif item_chance < 96:
                     msg=Message('Left-click to cast, right-click to cancel', libtcod.light_cyan)
                     item_component = Item(use_function=cast_fireball, 
                         targeting=True,
@@ -95,16 +106,40 @@ class GameMap:
                         render_order=RenderOrder.ITEM,
                         item=item_component)
                 else:
-                    item_component = Item(use_function=cast_lightning, damage=20, maximum_range=5)
-                    item = Entity(x, y, '#', libtcod.yellow, 'Lightning Scroll',
-                        render_order=RenderOrder.ITEM,
-                        item=item_component)
+                    print('Adding sword')
+                    item_component = Item()
+                    item = Entity(x, y, 'A', libtcod.violet, 'Sword', 
+                        item=item_component,
+                        render_order=RenderOrder.ITEM)
+
                 entities.append(item)
 
+    def next_floor(self, player, message_log, config, component):
+        self.dungeon_level += 1
+        entities = [player]
+        self.tiles = self.initialize_tiles()
+        self.make_map(
+            config.get('MAX_ROOMS'), 
+            config.get('ROOM_MIN_SIZE'), 
+            config.get('ROOM_MAX_SIZE'), 
+            player, 
+            entities, 
+            config.get('MAX_MONSTERS'),
+            config.get('MAX_ITEMS'),
+            component)
+
+        player.fighter.heal(player.fighter.max_hp // 2)
+        message_log.add_message(
+            Message('You take a moment to rest', libtcod.light_violet)
+        )
+
+        return entities
 
     def make_map(self, max_rooms, min_size, max_size, player, entities, max_monsters, max_items, components):
         rooms = []
         num_rooms = 0
+        last_room_x = None
+        last_room_y = None
         for r in range(max_rooms):
             w = randint(min_size, max_size)
             h = randint(min_size, max_size)
@@ -118,6 +153,9 @@ class GameMap:
             else:
                 self.create_room(new_room)
                 (new_x, new_y) = new_room.center()
+
+                last_room_x = new_x
+                last_room_y = new_y
                 if num_rooms == 0:
                     player.x = new_x
                     player.y = new_y
@@ -132,6 +170,11 @@ class GameMap:
                 self.place_entities(new_room, entities, max_monsters, max_items, components)
                 rooms.append(new_room)
                 num_rooms += 1
+
+        stairs_component = Stairs(self.dungeon_level+1)
+        down_stairs = Entity(last_room_x, last_room_y, '>', libtcod.white, 'Stairs',
+                             render_order=RenderOrder.STAIRS, stairs=stairs_component)
+        entities.append(down_stairs)
     
     def initialize_tiles(self):
         tiles = [[Tile(True) for y in range(self.height)] for x in range(self.width)]
