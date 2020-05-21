@@ -7,7 +7,6 @@ class Fighter:
         self.base_defense = defense
         self.base_power = power
         self.hp = hp
-        self.xp = xp
         self.owner = None
 
     @property
@@ -43,8 +42,11 @@ class Fighter:
         if self.hp < 0:
             self.hp = 0
         if self.hp == 0:
-            print('%s is dead and yields %i exp' % (self.owner.name, self.xp))
-            results.append({'dead': self.owner, 'xp': self.xp})
+            if self.owner.purse:
+                results.append({'loot': self.owner.purse.coins})
+                results.append({'message': 
+                    Message('Looted %i gold coins from %s' % (self.owner.purse.coins, self.owner.name), libtcod.light_green)})
+            results.append({'dead': self.owner})
         return results
 
     def heal(self, amount):

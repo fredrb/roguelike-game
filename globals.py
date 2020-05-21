@@ -10,6 +10,7 @@ class GameStates(Enum):
     TARGETING = 6
     LEVEL_UP = 7
     CHARACTER_SCREEN = 8
+    SHOP = 9
 
 class RenderOrder(Enum):
     STAIRS = auto()

@@ -1,5 +1,5 @@
 from globals import CONFIG, GameStates
-from menu import render_bar, inventory_menu, character_screen, level_up_menu
+from menu import render_bar, inventory_menu, character_screen, level_up_menu, menu
 import tcod
 
 class GameScene:
@@ -80,8 +80,15 @@ class GameScene:
         tcod.console_print_ex(panel, 1, 3, tcod.BKGND_NONE, tcod.LEFT, 
                                  'Dungeon Level: %s' % state.game_map.dungeon_level)
 
+        tcod.console_print_ex(panel, 1, 4, tcod.BKGND_NONE, tcod.LEFT,
+                                 'Gold Coins: %i' % state.player.purse.coins)
+
         tcod.console_blit(self.owner.con, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'), 0, 0, 0)
         tcod.console_blit(self.owner.panel, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('PANEL_HEIGHT'), 0, 0, CONFIG.get('PANEL_Y'))
+
+        if state.game_state == GameStates.SHOP:
+            title = 'Shop at level %s' % state.game_map.dungeon_level
+            menu(con, title, ['(1) +1 STR (Stronger attacks)'], 50, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'))
 
         if state.game_state in (GameStates.INVENTORY, GameStates.DROP_INVENTORY):
             if state.game_state == GameStates.INVENTORY:

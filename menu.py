@@ -42,12 +42,6 @@ def character_screen(player, character_screen_width, character_screen_height, sc
     libtcod.console_set_default_foreground(window, libtcod.white)
     libtcod.console_print_rect_ex(window, 0, 1, character_screen_width, character_screen_height, libtcod.BKGND_NONE,
                                   libtcod.LEFT, 'Character Information')
-    libtcod.console_print_rect_ex(window, 0, 2, character_screen_width, character_screen_height, libtcod.BKGND_NONE,
-                                  libtcod.LEFT, 'Level: {0}'.format(player.level.current_level))
-    libtcod.console_print_rect_ex(window, 0, 3, character_screen_width, character_screen_height, libtcod.BKGND_NONE,
-                                  libtcod.LEFT, 'Experience: {0}'.format(player.level.current_xp))
-    libtcod.console_print_rect_ex(window, 0, 4, character_screen_width, character_screen_height, libtcod.BKGND_NONE,
-                                  libtcod.LEFT, 'Experience to Level: {0}'.format(player.level.experience_to_next_level))
     libtcod.console_print_rect_ex(window, 0, 6, character_screen_width, character_screen_height, libtcod.BKGND_NONE,
                                   libtcod.LEFT, 'Maximum HP: {0}'.format(player.fighter.max_hp))
     libtcod.console_print_rect_ex(window, 0, 7, character_screen_width, character_screen_height, libtcod.BKGND_NONE,
@@ -59,6 +53,59 @@ def character_screen(player, character_screen_width, character_screen_height, sc
     y = screen_height // 2 - character_screen_height // 2
     libtcod.console_blit(window, 0, 0, character_screen_width, character_screen_height, 0, x, y, 1.0, 0.7)
 
+def city_bg(con, background_image, screen_width, screen_height):
+    con.draw_frame(1, 1, screen_width - 2, screen_height - 2, "CITY OF METANO", True, libtcod.white, libtcod.black)
+    libtcod.console_set_default_foreground(0, libtcod.light_grey)
+    con.draw_frame(1, 1, 17, 8, "PURSE")
+    libtcod.console_set_default_foreground(0, libtcod.light_yellow)
+    con.print_(2, 3, "Gold") 
+    libtcod.console_set_default_foreground(0, libtcod.light_grey)
+    con.print_(2, 4, "Silver") 
+    libtcod.console_set_default_foreground(0, libtcod.Color(190, 150, 100))
+    con.print_(2, 5, "Copper") 
+
+    libtcod.console_set_default_foreground(0, libtcod.white)
+    con.print_(11, 3, "23") 
+    
+
+def _city_bg(con, background_image, screen_width, screen_height):
+    con.draw_frame(1, 1, screen_width - 2, screen_height - 2, "CITY OF METANO", True, libtcod.white, libtcod.black)
+    libtcod.console_set_default_foreground(0, libtcod.light_grey)
+    con.vline(int(screen_width/2), 4, screen_height - 8)
+    con.draw_frame(1, 1, 20, 10)
+    libtcod.console_set_default_foreground(0, libtcod.light_yellow)
+
+    con.print_(2, 2, "SHARDS") 
+    con.print_(12, 2, "SLOTS") 
+
+    libtcod.console_set_default_foreground(0, libtcod.white)
+    con.print_(3, 4, "A")
+    con.print_(3, 5, "B")
+    con.print_(3, 6, "C")
+    con.print_(3, 7, "D")
+    con.print_(3, 8, "E")
+
+    con.print_(5, 4, "%s" % ("x0"))
+    con.print_(5, 5, "%s" % ("x0"))
+    con.print_(5, 6, "%s" % ("x0"))
+    con.print_(5, 7, "%s" % ("x0"))
+    con.print_(5, 8, "%s" % ("x0"))
+
+    con.draw_rect(12, 4, 1, 1, 0, libtcod.white, libtcod.grey)
+    con.print(12, 4, "%c"%chr(23))
+
+    
+    con.print_(int(screen_width/2)+2, 4, "AA")
+    con.print_(int(screen_width/2)+2, 5, "AB")
+
+    #con.print_box(int(screen_width/2)+14, 4, 8, 1, "Craft", libtcod.white, libtcod.blue)
+    #con.print_box(int(screen_width/2)+14, 5, 8, 1, "Craft", libtcod.white, libtcod.blue)
+
+    #libtcod.console_set_default_foreground(0, libtcod.light_yellow)
+    #con.print_(int(screen_width/4)-2, 4, "SHARDS")
+    #con.print_(int(screen_width/4)-2, int(screen_height/2), "SLOTS")
+
+    #con.print_(int(screen_width/2)+int(screen_width/4)-2, 4, "RECIPES")
 
 def main_menu(con, background_image, screen_width, screen_height):
     libtcod.image_blit_2x(background_image, 0, 0, 0)

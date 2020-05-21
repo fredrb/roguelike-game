@@ -27,6 +27,13 @@ def handle_keys(key, game_state):
         return handle_level_up_menu(key)
     if game_state == GameStates.CHARACTER_SCREEN:
         return handle_character_menu(key)
+    if game_state == GameStates.SHOP:
+        return handle_shop(key)
+    return {}
+
+def handle_shop(key):
+    if key == 27:
+        return {'exit': True}
     return {}
 
 def handle_character_menu(key):

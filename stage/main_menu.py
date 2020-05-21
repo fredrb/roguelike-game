@@ -1,13 +1,13 @@
 import tcod
 
 from input_handlers import handle_main_menu
-from graphics.render import MainMenuScene
+from graphics.scene.main_menu import MainMenuScene
 from globals import GameStates, RenderOrder, CONFIG
 from game_map import GameMap
 from components.fighter import Fighter
 from components.inventory import Inventory
 from components.equipment import Equipment
-from components.level import Level
+from components.purse import Purse
 from components.ai import BasicMonster
 from message_log import MessageLog
 from entity import Entity
@@ -20,7 +20,8 @@ def component(name):
         "TROLL"     : Fighter(hp=16, defense=1, power=4, xp=100),
         "BASIC"     : BasicMonster(),
         "INVENTORY" : Inventory(26),
-        "EQUIPMENT" : Equipment()
+        "EQUIPMENT" : Equipment(),
+        "PURSE"     : Purse(0, 99)
     }
     return component_map[name]
 
@@ -33,7 +34,7 @@ def get_game_variables():
                     render_order=RenderOrder.ACTOR, 
                     inventory=component("INVENTORY"),
                     equipment=component("EQUIPMENT"),
-                    level=Level(),
+                    purse=component("PURSE"),
                     fighter=component("PLAYER"))
 
     entities = [player]
@@ -103,6 +104,7 @@ class MainMenuStage:
         self.state = MainMenuState()
         self.result_processor = EmptyResultProcess()
         self.event_queue = {}
+        self.name = "Main Menu"
 
     def run(self, key):
         self.scene.show(self.state)
