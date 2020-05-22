@@ -1,6 +1,7 @@
 from globals import CONFIG, GameStates
 from menu import render_bar, inventory_menu, character_screen, level_up_menu, menu, shop_menu
 import tcod
+import math
 
 class GameScene:
     def __init__(self):
@@ -32,6 +33,9 @@ class GameScene:
         for entity in state.entities:
             tcod.console_put_char(self.owner.con, entity.x, entity.y, ' ', tcod.BKGND_NONE)
 
+    def distance(self, x1, y1, x2, y2):
+        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
     def __render_all(self, state):
         con = self.owner.con
         panel = self.owner.panel
@@ -47,7 +51,17 @@ class GameScene:
                             tcod.console_set_char_background(con, x, y, colors.get('light_wall'), tcod.BKGND_SET)
                         else:
                             tcod.console_set_char_background(con, x, y, colors.get('light_ground'), tcod.BKGND_SET)
+                            if state.game_state == GameStates.TARGETING:
+                                if state.targeting_area and self.distance(x, y, state.mouse_x, state.mouse_y) <= state.targeting_radius:
+                                    print("extra area")
+                                    tcod.console_set_char_background(con, x, y, tcod.light_red, tcod.BKGND_SET)
+                                elif x == state.mouse_x and y == state.mouse_y:
+                                    print("exact area (%s) (%i)" % (str(state.targeting_area), state.targeting_radius))
+                                    tcod.console_set_char_background(con, x, y, tcod.light_red, tcod.BKGND_SET)
+                                    
                             if state.game_state == GameStates.TARGETING and x == state.mouse_x and y == state.mouse_y:
+                                if state.targeting_area:
+                                    radius = state.targeting_radius
                                 tcod.console_set_char_background(con, x, y, tcod.light_red, tcod.BKGND_SET)
                         state.game_map.tiles[x][y].explored = True
                         if self.redraw and state.game_state in (GameStates.PLAYERS_TURN, GameStates.TARGETING):

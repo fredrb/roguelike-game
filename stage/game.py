@@ -223,6 +223,8 @@ class GameStateReporter:
             targeting = result.get('targeting')
             targeting_index = result.get('targeting_index')
             targeting_cancelled = result.get('targeting_cancelled')
+            targeting_area = result.get('targeting_area')
+            targeting_radius = result.get('radius')
             exit_game = result.get('exit_game')
             open_shop = result.get('open_shop')
             container_consumed = result.get('container_consumed')
@@ -268,6 +270,12 @@ class GameStateReporter:
                 state.game_state = GameStates.TARGETING
                 state.targeting_item = targeting
                 state.message_log.add_message(state.targeting_item.item.targeting_message)
+                print("result: %s" % result)
+                if targeting_area and targeting_radius:
+                    state.targeting_area = True
+                    state.targeting_radius = targeting_radius
+                else:
+                    state.targeting_area = False
             if targeting_index:
                 state.targeting_index = targeting_index
             if targeting_cancelled:

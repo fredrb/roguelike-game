@@ -94,9 +94,11 @@ class GameMap:
                 # Item drop roll
                 item_chance = randint(0, 100)
                 if item_chance < 40:
-                    item = make_item("health_tome")
+                    item = make_item("fireball")
+                    #item = make_item("health_tome")
                 elif item_chance < 70:
-                    item = make_item("magic_missiles")
+                    item = make_item("fireball")
+                    #item = make_item("magic_missiles")
                 elif item_chance < 90:
                     item = make_item("paralysis")
                 else:

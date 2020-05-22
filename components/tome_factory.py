@@ -41,7 +41,7 @@ class FireBallTomeFactory:
     def make(self):
         target_msg = Message('Left-click to cast, right-click to cancel', tcod.light_cyan)
         item_component = Item(use_function=cast_fireball,
-            radius=1,
+            radius=2,
             damage=10,
             targeting=True,
             targeting_area=True,

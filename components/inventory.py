@@ -64,10 +64,16 @@ class Inventory:
         print("Using hotkey %i" % key)
         slot = self.tome_slots[key-1]
         item_component = slot.item.item
+        radius = item_component.function_kwargs.get('radius')
         if slot.quantity <= 0:
             results.append({'message': Message('Not enough tomes to cast %s' % slot.item.name, libtcod.yellow) }) 
         elif item_component.targeting and not (kwargs.get('target_x') or kwargs.get('target_y')):
-            results.append({'targeting': slot.item, 'targeting_index': key})
+            target = {'targeting': slot.item, 'targeting_index': key}
+            if item_component.targeting_area:
+                target['targeting_area'] = True
+                target['radius'] = radius
+            print("return result %s" % str(target))
+            results.append(target)
         else:
             kwargs = {**item_component.function_kwargs, **kwargs}
             item_use_results = item_component.use_function(self.owner, **kwargs)
