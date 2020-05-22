@@ -9,7 +9,8 @@ from components.equippable import Equippable
 from components.shop import Shop
 from components.chest import Chest
 from components.purse import Purse
-from item_functions import heal, cast_lightning, cast_fireball, cast_confuse
+
+from components.factory import make_item
 
 from message_log import Message
 
@@ -53,10 +54,9 @@ class GameMap:
             self.tiles[x][y].blocked = False
             self.tiles[x][y].block_sight = False
 
-    def place_entities(self, room, entities, max_monsters, max_items, component, max_chests=1):
+    def place_entities(self, room, entities, max_monsters, max_items, component, chest_chance=30):
         number_of_monsters = randint(0, max_monsters)
         number_of_items = randint(0, max_items)
-        number_of_chests = randint(0, max_chests)
 
         for i in range(number_of_monsters):
             x = randint(room.x1 + 1, room.x2 - 1)
@@ -76,14 +76,13 @@ class GameMap:
                                      ai=component("BASIC"))
                 entities.append(monster)
 
-        for i in range(max_chests):
-            print("Adding chest")
+        if randint(0,100) < chest_chance:
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
             if not any([entity for entity in entities if entity.x == x and entity.y == y]):
                 gold_coins = randint(1,11)
                 item_component = Chest(money=gold_coins)
-                chest = Entity(x, y, chr(10), libtcod.darker_orange, 'Chest', True, 
+                chest = Entity(x, y, "C", libtcod.darker_orange, 'Chest', True, 
                     render_order=RenderOrder.ITEM,
                     container=item_component) 
                 entities.append(chest)
@@ -94,35 +93,16 @@ class GameMap:
             if not any([entity for entity in entities if entity.x == x and entity.y == y]):
                 # Item drop roll
                 item_chance = randint(0, 100)
-                if item_chance < 50:
-                    item_component = Item(use_function=heal, amount=4)
-                    item = Entity(x, y, '!', libtcod.violet, 'Healing Potion', 
-                        render_order=RenderOrder.ITEM,
-                        item=item_component)
-                elif item_chance < 92:
-                    msg=Message('Click on an enemy to confuse it, or right-click to cancel', libtcod.light_cyan)
-                    item_component = Item(use_function=cast_confuse,
-                        targeting=True,
-                        targeting_message=msg)
-                    item = Entity(x, y, '#', libtcod.light_pink, 'Confusion Scroll',
-                        render_order=RenderOrder.ITEM,
-                        item=item_component)
-                elif item_chance < 96:
-                    msg=Message('Left-click to cast, right-click to cancel', libtcod.light_cyan)
-                    item_component = Item(use_function=cast_fireball, 
-                        targeting=True,
-                        targeting_message=msg,
-                        damage=60, 
-                        radius=3)
-                    item = Entity(x, y, '#', libtcod.red, 'Fireball Scroll',
-                        render_order=RenderOrder.ITEM,
-                        item=item_component)
+                if item_chance < 40:
+                    item = make_item("health_tome")
+                elif item_chance < 70:
+                    item = make_item("magic_missiles")
+                elif item_chance < 90:
+                    item = make_item("paralysis")
                 else:
-                    item_component = Item()
-                    item = Entity(x, y, 'A', libtcod.violet, 'Sword', 
-                        item=item_component,
-                        render_order=RenderOrder.ITEM)
-
+                    item = make_item("fireball")
+                item.x = x
+                item.y = y
                 entities.append(item)
 
     def next_floor(self, player, message_log, config, component):

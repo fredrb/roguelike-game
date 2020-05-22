@@ -126,6 +126,9 @@ class GameAct():
                     elif target.container:  
                         open_results = target.container.open(state.player)
                         player_turn_result.extend(open_results)
+                    elif target.item:
+                        pickup_results = state.player.inventory.add_item(target)
+                        player_turn_result.extend(pickup_results)
                     else:
                         attack_results = state.player.fighter.attack(target)
                         player_turn_result.extend(attack_results)

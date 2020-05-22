@@ -18,6 +18,21 @@ class BasicMonster:
                     results.extend(attack_results)
         return results
 
+class ParalysedMonster(BasicMonster):
+    def __init__(self, previous_ai, number_of_turns=5):
+        self.previous_ai = previous_ai
+        self.number_of_turns = number_of_turns
+
+    def take_turn(self, target, fov_map, game_map, entities):
+        results = []
+        if self.number_of_turns > 0:
+            self.number_of_turns -= 1
+        else:
+            self.owner.ai = self.previous_ai
+            results.append({
+                'message': Message('%s is no longer confused' % (self.owner.name), libtcod.light_yellow)
+            })
+        return results
 
 class ConfusedMonster(BasicMonster):
     def __init__(self, previous_ai, number_of_turns=10):

@@ -1,6 +1,6 @@
 import tcod as libtcod
 from message_log import Message
-from components.ai import ConfusedMonster
+from components.ai import ConfusedMonster, ParalysedMonster
 
 def heal(*args, **kwargs):
     entity = args[0]
@@ -13,6 +13,33 @@ def heal(*args, **kwargs):
     else:
         entity.fighter.heal(amount)
         results.append({'consumed': True, 'message': Message('Your wounds start to feel better', libtcod.green)})
+
+    return results
+
+def cast_magic_missile(*args, **kwargs):
+    entities = kwargs.get('entities')
+    damage = kwargs.get('damage')
+    fov_map = kwargs.get('fov_map')
+    target_x = kwargs.get('target_x')
+    target_y = kwargs.get('target_y')
+
+    results = []
+    if not libtcod.map_is_in_fov(fov_map, target_x, target_y):
+        results.append({
+            'consumed': False,
+            'message': Message('You cannot target a tile outside your field of view.', libtcod.yellow)
+        })
+        return results
+
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y and entity.ai:
+            results.extend(entity.fighter.take_damage(damage))
+            results.append({
+                'consumed': True,
+                'message': Message('Two magic missiles hit %s. Damage taken: %i' % (entity.name, damage), libtcod.cyan)})
+            break
+    else:
+        results.append({'consumed': False, 'message': Message('There is no targetable enemy at that location.', libtcod.yellow)})
 
     return results
 
@@ -74,6 +101,34 @@ def cast_fireball(*args, **kwargs):
 
     return results
 
+def cast_paralysis(*args, **kwargs):
+    entities = kwargs.get('entities')
+    fov_map = kwargs.get('fov_map')
+    target_x = kwargs.get('target_x')
+    target_y = kwargs.get('target_y')
+
+    results = []
+
+    if not libtcod.map_is_in_fov(fov_map, target_x, target_y):
+        results.append({
+            'consumed': False,
+            'message': Message('You cannot target a tile outside your field of view.', libtcod.yellow)
+        })
+        return results
+
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y and entity.ai:
+            confused_ai = ParalysedMonster(entity.ai, 10)
+            confused_ai.owner = entity
+            entity.ai = confused_ai
+            results.append({
+                'consumed': True,
+                'message': Message('%s is paralysed by spell' % entity.name, libtcod.light_cyan)})
+            break
+    else:
+        results.append({'consumed': False, 'message': Message('There is no targetable enemy at that location.', libtcod.yellow)})
+
+    return results
 def cast_confuse(*args, **kwargs):
     entities = kwargs.get('entities')
     fov_map = kwargs.get('fov_map')
