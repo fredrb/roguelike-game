@@ -27,7 +27,7 @@ class EquipmentSlots(Enum):
 
 CONFIG = {
     "WIDTH"             : 80,
-    "HEIGHT"            : 50,
+    "HEIGHT"            : 55,
     "MAP_WIDTH"         : 80,
     "MAP_HEIGHT"        : 43,
     "TITLE"             : "Kenya Survival",
@@ -35,7 +35,11 @@ CONFIG = {
     # UI - HP Bar
     "BAR_WIDTH"         : 20,
     "PANEL_HEIGHT"      : 7,
-    "PANEL_Y"           : 43, # height - panel_height
+    "PANEL_Y"           : 48, # height - panel_height
+
+    # UI - ACTION BAR
+    "ACTION_Y"          : 43,
+    "ACTION_HEIGHT"     : 5,
 
     # UI - Message Log
     # TODO: Find a way to compute these other than using hardcoded constants

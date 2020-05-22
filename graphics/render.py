@@ -8,6 +8,7 @@ class Render:
         self.root = None
         self.con = None
         self.panel = None
+        self.hotkeys = None
         self.stages = []
 
     def __init_screen(self):
@@ -20,6 +21,7 @@ class Render:
             'C',
             True)
         self.con = tcod.console_new(CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'))
+        self.hotkeys = tcod.console_new(CONFIG.get('WIDTH'), CONFIG.get('ACTION_HEIGHT'))
         self.panel = tcod.console_new(CONFIG.get('WIDTH'), CONFIG.get('PANEL_HEIGHT'))
 
     def clear(self):

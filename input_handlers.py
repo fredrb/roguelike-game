@@ -124,4 +124,6 @@ def handle_player_turn(key):
         return {'drop_inventory': True}
     elif key == 27:
         return {'exit': True}
+    elif key in (ord('1'), ord('2'), ord('3'), ord('4')):
+        return {'hotkey': chr(key)}
     return {}

@@ -35,6 +35,7 @@ class GameScene:
     def __render_all(self, state):
         con = self.owner.con
         panel = self.owner.panel
+        hotkeys = self.owner.hotkeys
         colors = CONFIG.get('COLORS')
         if self.fov_recompute or state.game_state == GameStates.TARGETING or self.redraw:
             for y in range(state.game_map.height):
@@ -85,8 +86,22 @@ class GameScene:
         tcod.console_print_ex(panel, 1, 4, tcod.BKGND_NONE, tcod.LEFT,
                                  'Gold Coins: %i' % state.player.purse.coins)
 
+        slot_pos = 0
+        for slot in state.player.inventory.tome_slots:
+            rel_pos = (slot_pos*3)
+            hotkeys.draw_frame(rel_pos+1, 1, 3, 3, str(slot_pos+1), True, tcod.white, tcod.grey) 
+            if slot.quantity > 0:
+                tcod.console_set_default_foreground(hotkeys, slot.item.color)
+            else:
+                tcod.console_set_default_foreground(hotkeys, tcod.light_grey)
+            tcod.console_print_ex(hotkeys,rel_pos+2, 2, tcod.BKGND_NONE, tcod.LEFT, "#")
+            tcod.console_set_default_foreground(hotkeys, tcod.white)
+            tcod.console_print_ex(hotkeys,rel_pos+1, 4, tcod.BKGND_NONE, tcod.LEFT, "x%i" % slot.quantity)
+            slot_pos += 1
+
         tcod.console_blit(self.owner.con, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'), 0, 0, 0)
         tcod.console_blit(self.owner.panel, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('PANEL_HEIGHT'), 0, 0, CONFIG.get('PANEL_Y'))
+        tcod.console_blit(self.owner.hotkeys, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('ACTION_HEIGHT'), 0, 0, CONFIG.get('ACTION_Y'))
 
         if state.game_state == GameStates.SHOP:
             shop_menu(con, state.player, state.game_map.shopkeeper.shop, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'))

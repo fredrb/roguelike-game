@@ -22,6 +22,7 @@ class GameState():
         self.message_log = None
         self.player = None
         self.targeting_item = None
+        self.targeting_index = None
         self.mouse_x = 0
         self.mouse_y = 0
 
@@ -43,6 +44,7 @@ class GameAct():
         drop_inventory = action.get('drop_inventory')
         targeting_cancelled = action.get('targeting_cancelled')
         level_up = action.get('level_up')
+        hotkey = action.get('hotkey')
         show_character_screen = action.get('show_character_screen')
         left_click = mouse_action.get('left_click')
         right_click = mouse_action.get('right_click')
@@ -113,6 +115,10 @@ class GameAct():
                 # TODO: Port save
                 #save_game(state.player, state.entities, state.game_map, state.message_log, state.game_state)
                 player_turn_result.append({'exit_game': True})
+
+        if hotkey and state.game_state == GameStates.PLAYERS_TURN:
+            results = state.player.inventory.use_hotkey(int(hotkey), entities=state.entities, fov_map=self.scene.fov_map)
+            player_turn_result.extend(results)
        
         if move and state.game_state == GameStates.PLAYERS_TURN:
             dx, dy = move
@@ -150,7 +156,7 @@ class GameAct():
         if state.game_state == GameStates.TARGETING:
             if left_click:
                 target_x, target_y = left_click
-                item_use_results = state.player.inventory.use(state.targeting_item, entities=state.entities, fov_map=self.scene.fov_map,
+                item_use_results = state.player.inventory.use_hotkey(state.targeting_index, entities=state.entities, fov_map=self.scene.fov_map,
                                                         target_x=target_x, target_y=target_y)
                 player_turn_result.extend(item_use_results)
             elif right_click:
@@ -215,6 +221,7 @@ class GameStateReporter:
             item_dropped = result.get('item_dropped')
             equip = result.get('equip')
             targeting = result.get('targeting')
+            targeting_index = result.get('targeting_index')
             targeting_cancelled = result.get('targeting_cancelled')
             exit_game = result.get('exit_game')
             open_shop = result.get('open_shop')
@@ -261,6 +268,8 @@ class GameStateReporter:
                 state.game_state = GameStates.TARGETING
                 state.targeting_item = targeting
                 state.message_log.add_message(state.targeting_item.item.targeting_message)
+            if targeting_index:
+                state.targeting_index = targeting_index
             if targeting_cancelled:
                 state.game_state = state.previous_game_state
                 state.message_log.add_message(Message('Targeting Cancelled'))
