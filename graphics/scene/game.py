@@ -1,5 +1,5 @@
 from globals import CONFIG, GameStates
-from menu import render_bar, inventory_menu, character_screen, level_up_menu, menu
+from menu import render_bar, inventory_menu, character_screen, level_up_menu, menu, shop_menu
 import tcod
 
 class GameScene:
@@ -36,7 +36,7 @@ class GameScene:
         con = self.owner.con
         panel = self.owner.panel
         colors = CONFIG.get('COLORS')
-        if self.fov_recompute:
+        if self.fov_recompute or state.game_state == GameStates.TARGETING or self.redraw:
             for y in range(state.game_map.height):
                 for x in range(state.game_map.width):
                     visible = tcod.map_is_in_fov(self.fov_map, x, y)
@@ -46,6 +46,8 @@ class GameScene:
                             tcod.console_set_char_background(con, x, y, colors.get('light_wall'), tcod.BKGND_SET)
                         else:
                             tcod.console_set_char_background(con, x, y, colors.get('light_ground'), tcod.BKGND_SET)
+                            if state.game_state == GameStates.TARGETING and x == state.mouse_x and y == state.mouse_y:
+                                tcod.console_set_char_background(con, x, y, tcod.light_red, tcod.BKGND_SET)
                         state.game_map.tiles[x][y].explored = True
                         if self.redraw and state.game_state in (GameStates.PLAYERS_TURN, GameStates.TARGETING):
                             tcod.console_put_char(con, x, y, ' ', tcod.BKGND_NONE)
@@ -87,8 +89,7 @@ class GameScene:
         tcod.console_blit(self.owner.panel, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('PANEL_HEIGHT'), 0, 0, CONFIG.get('PANEL_Y'))
 
         if state.game_state == GameStates.SHOP:
-            title = 'Shop at level %s' % state.game_map.dungeon_level
-            menu(con, title, ['(1) +1 STR (Stronger attacks)'], 50, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'))
+            shop_menu(con, state.player, state.game_map.shopkeeper.shop, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'))
 
         if state.game_state in (GameStates.INVENTORY, GameStates.DROP_INVENTORY):
             if state.game_state == GameStates.INVENTORY:

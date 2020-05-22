@@ -21,7 +21,7 @@ def component(name):
         "BASIC"     : BasicMonster(),
         "INVENTORY" : Inventory(26),
         "EQUIPMENT" : Equipment(),
-        "PURSE"     : Purse(0, 99)
+        "PURSE"     : Purse()
     }
     return component_map[name]
 
@@ -106,10 +106,12 @@ class MainMenuStage:
         self.event_queue = {}
         self.name = "Main Menu"
 
-    def run(self, key):
+    def run(self, events):
+        key, mouse_move, mouse_click = events
         self.scene.show(self.state)
-        action = self.input_handler.on_key(key)
-        self.event_queue = self.state.turn(action)
-        self.event_queue = self.result_processor.process(self.event_queue)
+        if key:
+            action = self.input_handler.on_key(key)
+            self.event_queue = self.state.turn(action)
+            self.event_queue = self.result_processor.process(self.event_queue)
         return self.event_queue
 

@@ -29,13 +29,19 @@ def main():
 
     while True:
         key_pressed = None
+        mouse_moved = None
+        mouse_clicked = None
         next_stage = None
         for event in libtcod.event.wait():
             if event.type == "QUIT":
                 raise SystemExit()
             if event.type == "KEYDOWN":
                 key_pressed = event.sym
-        result = current_stage.run(key_pressed)
+            if event.type == "MOUSEMOTION":
+                mouse_moved = event
+            if event.type == "MOUSEBUTTONDOWN":
+                mouse_clicked = event
+        result = current_stage.run((key_pressed, mouse_moved, mouse_clicked))
         next_stage = result.get('next_stage')
         if next_stage is not None:
             render.clear()

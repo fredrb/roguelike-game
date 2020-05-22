@@ -22,6 +22,7 @@ class GameMap:
         self.height = height
         self.tiles = self.initialize_tiles()
 
+        self.shopkeeper = None
         self.dungeon_level = dungeon_level
 
     def is_blocked(self, x, y):
@@ -52,7 +53,7 @@ class GameMap:
             self.tiles[x][y].blocked = False
             self.tiles[x][y].block_sight = False
 
-    def place_entities(self, room, entities, max_monsters, max_items, component, max_chests=3):
+    def place_entities(self, room, entities, max_monsters, max_items, component, max_chests=1):
         number_of_monsters = randint(0, max_monsters)
         number_of_items = randint(0, max_items)
         number_of_chests = randint(0, max_chests)
@@ -80,26 +81,20 @@ class GameMap:
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
             if not any([entity for entity in entities if entity.x == x and entity.y == y]):
-                gold_coins = randint(0,10)
+                gold_coins = randint(1,11)
                 item_component = Chest(money=gold_coins)
-                chest = Entity(x, y, 'C', libtcod.darker_orange, 'Chest', True, 
+                chest = Entity(x, y, chr(10), libtcod.darker_orange, 'Chest', True, 
                     render_order=RenderOrder.ITEM,
                     container=item_component) 
                 entities.append(chest)
-        for i in range(0):
+
+        for i in range(max_items):
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
             if not any([entity for entity in entities if entity.x == x and entity.y == y]):
                 # Item drop roll
                 item_chance = randint(0, 100)
                 if item_chance < 50:
-                    print('Adding sword')
-                    equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=3)
-                    item = Entity(x, y, '/', libtcod.sky, 'Sword', equippable=equippable_component)
-                elif item_chance < 90:
-                    equippable_component = Equippable(EquipmentSlots.OFF_HAND, defense_bonus=1)
-                    item = Entity(x, y, '[', libtcod.darker_orange, 'Shield', equippable=equippable_component)
-                elif item_chance < 91:
                     item_component = Item(use_function=heal, amount=4)
                     item = Entity(x, y, '!', libtcod.violet, 'Healing Potion', 
                         render_order=RenderOrder.ITEM,
@@ -190,11 +185,9 @@ class GameMap:
                 num_rooms += 1
 
         shop_component = Shop(self.dungeon_level)
-        #shopkeeper = Entity(last_corner_x, last_corner_y, '@', libtcod.light_blue, 'Shopkeeper', True,
-        #                    render_order=RenderOrder.ACTOR, shop=shop_component)                    
-        shopkeeper = Entity(player.x+1, player.y+2, '@', libtcod.light_blue, 'Shopkeeper', True,
+        self.shopkeeper = Entity(player.x+1, player.y+2, '@', libtcod.light_blue, 'Shopkeeper', True,
                             render_order=RenderOrder.ACTOR, shop=shop_component)                    
-        entities.append(shopkeeper)
+        entities.append(self.shopkeeper)
 
         stairs_component = Stairs(self.dungeon_level+1)
         down_stairs = Entity(last_room_x, last_room_y, '>', libtcod.white, 'Stairs',

@@ -12,16 +12,20 @@ def menu(con, header, options, width, screen_width, screen_height):
     libtcod.console_print_rect_ex(window, 0, 0, width, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
 
     y = header_height
-    letter_index = ord('a')
+    index = 1
     for option_text in options:
-        text = '(' + chr(letter_index) + ') ' + option_text
+        text = '(' + str(index) + ') ' + option_text
         libtcod.console_print_ex(window, 0, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
         y += 1
-        letter_index += 1
+        index += 1
 
     x = int(screen_width / 2 - width / 2)
     y = int(screen_height / 2 - height / 2)
     libtcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
+
+def shop_menu(con, player, shop, screen_width, screen_height):
+    options = [opt.text for opt in shop.options]
+    menu(con, shop.get_message(), options, 50, screen_width, screen_height)
 
 def inventory_menu(con, header, player, inventory_width, screen_width, screen_height):
     if len(player.inventory.items) == 0:
@@ -92,7 +96,6 @@ def _city_bg(con, background_image, screen_width, screen_height):
     con.print_(5, 8, "%s" % ("x0"))
 
     con.draw_rect(12, 4, 1, 1, 0, libtcod.white, libtcod.grey)
-    con.print(12, 4, "%c"%chr(23))
 
     
     con.print_(int(screen_width/2)+2, 4, "AA")

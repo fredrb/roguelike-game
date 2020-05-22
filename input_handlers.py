@@ -6,11 +6,11 @@ from globals import GameStates
 # Exit -> Leave Game
 
 def handle_main_menu(key):
-    if key == ord('a'):
+    if key == ord('1'):
         return {'new_game': True}
-    if key == ord('b'):
+    if key == ord('2'):
         return {'load_game': True}
-    if key == ord('c'):
+    if key == ord('3'):
         return {'exit': True}
     return {}
 
@@ -34,6 +34,9 @@ def handle_keys(key, game_state):
 def handle_shop(key):
     if key == 27:
         return {'exit': True}
+    index = key - ord('1')
+    if index >= 0:
+        return {'shop_index': index}
     return {}
 
 def handle_character_menu(key):
@@ -59,6 +62,10 @@ def handle_targeting_keys(key):
         return {'exit': True}
     return {}
 
+def handle_mouse_move(mouse):
+    (x, y) = (mouse.tile[0], mouse.tile[1])
+    return (x, y)
+
 def handle_mouse(mouse):
     (x, y) = (mouse.tile[0], mouse.tile[1])
 
@@ -74,7 +81,7 @@ def handle_player_inventory(key):
         return {'show_inventory': True}
     if key == ord('o'):
         return {'drop_inventory': True}
-    index = key - ord('a')
+    index = key - ord('1')
     if index >= 0:
         return {'inventory_index': index}
     return {}

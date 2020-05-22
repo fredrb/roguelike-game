@@ -1,7 +1,7 @@
 import tcod
 from graphics.scene.game import GameScene
 from globals import GameStates, CONFIG, RenderOrder
-from input_handlers import handle_keys
+from input_handlers import handle_keys, handle_mouse, handle_mouse_move
 from message_log import Message
 from components.factory import component
 from entity import Entity
@@ -22,13 +22,15 @@ class GameState():
         self.message_log = None
         self.player = None
         self.targeting_item = None
+        self.mouse_x = 0
+        self.mouse_y = 0
 
 class GameAct():
     def __init__(self, scene):
         # TODO: Shouldn't have, but keeping here for convenience now
         self.scene = scene
 
-    def perform(self, state, action, mouse_action):
+    def perform(self, state, action, mouse_action, mouse_move):
         player_turn_result = []
 
         exit = action.get('exit')
@@ -36,6 +38,7 @@ class GameAct():
         pickup = action.get('pickup')
         show_inventory = action.get('show_inventory')
         inventory_index = action.get('inventory_index')
+        shop_index = action.get('shop_index')
         take_stairs = action.get('take_stairs')
         drop_inventory = action.get('drop_inventory')
         targeting_cancelled = action.get('targeting_cancelled')
@@ -43,6 +46,7 @@ class GameAct():
         show_character_screen = action.get('show_character_screen')
         left_click = mouse_action.get('left_click')
         right_click = mouse_action.get('right_click')
+        (mouse_x, mouse_y) = mouse_move
 
         if show_inventory:
             if state.game_state == GameStates.INVENTORY:
@@ -71,6 +75,11 @@ class GameAct():
         if targeting_cancelled:
             state.game_state = state.previous_game_state
             state.message_log.add_message(Message('Targeting cancelled'))
+
+        if shop_index is not None and shop_index < len(state.game_map.shopkeeper.shop.options):
+            tome = state.game_map.shopkeeper.shop.options[shop_index]
+            player_turn_result.extend(tome.use(state.player))
+             
 
         if inventory_index is not None and state.previous_game_state != GameStates.PLAYER_DEAD and inventory_index < len(state.player.inventory.items):
             item = state.player.inventory.items[inventory_index]
@@ -143,6 +152,7 @@ class GameAct():
                 player_turn_result.extend(item_use_results)
             elif right_click:
                 player_turn_result.append({'targeting_cancelled': True})
+            self.scene.fov_recompute = True
 
         return player_turn_result
 
@@ -257,11 +267,15 @@ class GameStage:
     def __init__(self):
         self.scene = GameScene()
         self.input_handler = handle_keys
+        self.mouse_move_handler = handle_mouse_move
+        self.mouse_click_handler = handle_mouse
         self.act = GameAct(self.scene)
         self.ai_act = GameAiAct(self.scene)
         self.state = GameState()
         self.reporter = GameStateReporter()
         self.name = "Game"
+
+        self.last_x, self.last_y = (0, 0)
 
     def load(self, args):
         player, entities, game_map, message_log, game_state = args
@@ -272,14 +286,22 @@ class GameStage:
         self.state.message_log = message_log
         self.state.game_state = game_state
 
-    def run(self, key):
+    def run(self, events):
+        key, mouse_move, mouse_click = events
         if not self.state.loaded:
             raise SystemError("Stage ran before state was loaded")
         self.scene.show(self.state)
 
         action = self.input_handler(key, self.state.game_state) if key is not None else {}
-        mouse_action = {}
-        results = self.act.perform(self.state, action, mouse_action)
+        action_mouse_click = self.mouse_click_handler(mouse_click) if mouse_click is not None else {}
+
+        if mouse_move:
+            self.last_x, self.last_y = self.mouse_move_handler(mouse_move)
+        self.state.mouse_x = self.last_x
+        self.state.mouse_y = self.last_y
+        action_mouse_move = (self.last_x, self.last_y)
+
+        results = self.act.perform(self.state, action, action_mouse_click, action_mouse_move)
         external_events = self.reporter.update(self.state, results)
 
         if self.state.game_state == GameStates.ENEMY_TURN:
