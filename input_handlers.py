@@ -90,6 +90,8 @@ def handle_player_inventory(key):
 def handle_player_dead(key):
     if key == ord('i'):
         return {'show_inventory': True}
+    if key == ord('r'):
+        return {'revive': True}
     else:
         return {'exit': True}
 
@@ -112,6 +114,10 @@ def handle_player_turn(key):
         return {'move': (-1, 1)}
     elif key == ord('c'):
         return {'move': (1, 1)}
+    elif key == ord('v'):
+        return {'debug_take_stairs': True}
+    elif key == 32: # space
+        return {'take_stairs': True}
     elif key == 13:
         return {'take_stairs': True}
     elif key == ord('f'):

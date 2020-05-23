@@ -10,7 +10,7 @@ import tcod
 def component(name):
     # TODO: Change this into a proper factory
     component_map = {
-        "PLAYER"    : Fighter(hp=60, defense=2, power=5),
+        "PLAYER"    : Fighter(hp=60, defense=2, power=5, magic=1),
         "ORC"       : Fighter(hp=10, defense=0, power=3, xp=35),
         "TROLL"     : Fighter(hp=16, defense=1, power=4, xp=100),
         "BASIC"     : BasicMonster(),

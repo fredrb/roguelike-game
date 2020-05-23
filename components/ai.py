@@ -18,6 +18,26 @@ class BasicMonster:
                     results.extend(attack_results)
         return results
 
+class SummonerMonster(BasicMonster):
+    def __init__(self, chance=30, summon="goblin"):
+        self.owner = None
+        self.chance = chance
+        self.summon = summon
+
+    def take_turn(self, target, fov_map, game_map, entities):
+        level = game_map.dungeon_level - 1
+        monster = self.owner
+        if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+            if randint(0, 100) < self.chance:
+                return [{
+                    'summon': {'monster': self.summon, 'level': level},
+                    'message': Message('%s has summoned a %s' % (monster.name, self.summon), libtcod.purple)
+                }]
+            else:
+                return super().take_turn(target, fov_map, game_map, entities)
+        return []
+
+
 class ParalysedMonster(BasicMonster):
     def __init__(self, previous_ai, number_of_turns=5):
         self.previous_ai = previous_ai

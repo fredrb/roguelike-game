@@ -9,6 +9,7 @@ from components.equippable import Equippable
 from components.shop import Shop
 from components.chest import Chest
 from components.purse import Purse
+from components.monster_factory import make_monster_random, make_monster
 
 from components.factory import make_item
 
@@ -16,6 +17,8 @@ from message_log import Message
 
 from random import randint
 from globals import RenderOrder
+
+import math
 
 class GameMap:
     def __init__(self, width, height, dungeon_level=1):
@@ -54,7 +57,17 @@ class GameMap:
             self.tiles[x][y].blocked = False
             self.tiles[x][y].block_sight = False
 
-    def place_entities(self, room, entities, max_monsters, max_items, component, chest_chance=30):
+    def is_free(self, entities, x, y):
+        if not self.tiles[x][y].blocked:
+            for entity in entities:
+                if entity.x == x and entity.y == y:
+                    return False
+            return True
+        else:
+            return False
+
+    def place_entities(self, room, entities, max_monsters, max_items, component, chest_chance=40):
+        max_monsters += math.floor(self.dungeon_level/10)
         number_of_monsters = randint(0, max_monsters)
         number_of_items = randint(0, max_items)
 
@@ -62,25 +75,16 @@ class GameMap:
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
             if not any([entity for entity in entities if entity.x == x and entity.y == y]):
-                if randint(0, 100) < 80:
-                    monster = Entity(x, y, 'o', libtcod.desaturated_green, 'Orc', True,
-                                     render_order=RenderOrder.ACTOR,
-                                     fighter=component("ORC"),
-                                     purse=Purse(initial=randint(1,5)),
-                                     ai=component("BASIC"))
-                else:
-                    monster = Entity(x, y, 'T', libtcod.darker_green, 'Troll', True,
-                                     render_order=RenderOrder.ACTOR,
-                                     fighter=component("TROLL"),
-                                     purse=Purse(initial=randint(3,9)),
-                                     ai=component("BASIC"))
+                monster = make_monster_random(self.dungeon_level)                    
+                monster.x = x
+                monster.y = y
                 entities.append(monster)
 
         if randint(0,100) < chest_chance:
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
             if not any([entity for entity in entities if entity.x == x and entity.y == y]):
-                gold_coins = randint(1,11)
+                gold_coins = randint(2*self.dungeon_level,10*self.dungeon_level)
                 item_component = Chest(money=gold_coins)
                 chest = Entity(x, y, "C", libtcod.darker_orange, 'Chest', True, 
                     render_order=RenderOrder.ITEM,
@@ -94,11 +98,9 @@ class GameMap:
                 # Item drop roll
                 item_chance = randint(0, 100)
                 if item_chance < 40:
-                    item = make_item("fireball")
-                    #item = make_item("health_tome")
+                    item = make_item("health_tome")
                 elif item_chance < 70:
-                    item = make_item("fireball")
-                    #item = make_item("magic_missiles")
+                    item = make_item("magic_missiles")
                 elif item_chance < 90:
                     item = make_item("paralysis")
                 else:
@@ -128,7 +130,28 @@ class GameMap:
 
         return entities
 
+    def make_boss_map(self, player, entities):
+        new_room = Rect(10, 10, 30, 30)
+        self.future_stairs_x = 10
+        self.future_stairs_y = 10
+        self.create_room(new_room)
+
+        player.x = 12
+        player.y = 25
+
+        dragon = make_monster('dragon', self.dungeon_level+3)
+        dragon.x = 32
+        dragon.y = 25
+        warlock = make_monster('warlock', self.dungeon_level+3)
+        warlock.x = 30
+        dragon.y = 27
+        entities.append(dragon)
+        entities.append(warlock)
+        
+
     def make_map(self, max_rooms, min_size, max_size, player, entities, max_monsters, max_items, components):
+        if ((self.dungeon_level % 10) == 0):
+            return self.make_boss_map(player, entities)
         rooms = []
         num_rooms = 0
         last_room_x = None
@@ -166,15 +189,19 @@ class GameMap:
                 rooms.append(new_room)
                 num_rooms += 1
 
-        shop_component = Shop(self.dungeon_level)
-        self.shopkeeper = Entity(player.x+1, player.y+2, '@', libtcod.light_blue, 'Shopkeeper', True,
-                            render_order=RenderOrder.ACTOR, shop=shop_component)                    
-        entities.append(self.shopkeeper)
 
         stairs_component = Stairs(self.dungeon_level+1)
         down_stairs = Entity(last_room_x, last_room_y, '>', libtcod.white, 'Stairs',
                              render_order=RenderOrder.STAIRS, stairs=stairs_component)
         entities.append(down_stairs)
+
+        shop_component = Shop(self.dungeon_level)
+        self.shopkeeper = Entity(down_stairs.x+1, down_stairs.y+1, '@', libtcod.light_blue, 'Shopkeeper', True,
+                            render_order=RenderOrder.ACTOR, shop=shop_component)                    
+        entities.append(self.shopkeeper)
+        for e in entities:
+            if e.x == self.shopkeeper.x and e.y == self.shopkeeper.y and e != self.shopkeeper:
+                entities.remove(e)
     
     def initialize_tiles(self):
         tiles = [[Tile(True) for y in range(self.height)] for x in range(self.width)]

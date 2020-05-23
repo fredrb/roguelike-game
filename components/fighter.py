@@ -1,11 +1,13 @@
 from message_log import Message
+import random
 import tcod as libtcod
 
 class Fighter:
-    def __init__(self, hp, defense, power, xp=0):
+    def __init__(self, hp, defense, power, magic=1, xp=0):
         self.base_max_hp = hp
         self.base_defense = defense
         self.base_power = power
+        self.base_magic = magic
         self.hp = hp
         self.owner = None
 
@@ -46,6 +48,13 @@ class Fighter:
                 results.append({'loot': self.owner.purse.coins})
                 results.append({'message': 
                     Message('Looted %i gold coins from %s' % (self.owner.purse.coins, self.owner.name), libtcod.light_green)})
+            if self.owner.boss:
+                results.append({
+                    'message': Message('Boss %s slain! Proceed to the stairs' % self.owner.name, libtcod.light_yellow)
+                })
+                results.append({
+                    'boss_dead': True
+                })
             results.append({'dead': self.owner})
         return results
 
@@ -57,6 +66,8 @@ class Fighter:
     def attack(self, target):
         results = []
         damage = self.power - target.fighter.defense
+        #hit = random.randint(self.power, self.power*10) > random.randint(target.fighter.defense, target.fighter.defense*10)
+        damage = random.randint(int(self.power/2), int(self.power*2))
         if damage > 0:
             text = '%s attacks %s for %i hit points' % (self.owner.name.capitalize(), target.name, damage)
             results.append({

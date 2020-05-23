@@ -5,6 +5,7 @@ from input_handlers import handle_keys, handle_mouse, handle_mouse_move
 from message_log import Message
 from components.factory import component
 from entity import Entity
+from components.monster_factory import make_monster
 
 class GameInputHandler:
     def on_key(self, key, state):
@@ -45,6 +46,8 @@ class GameAct():
         targeting_cancelled = action.get('targeting_cancelled')
         level_up = action.get('level_up')
         hotkey = action.get('hotkey')
+        revive = action.get('revive')
+        debug_take_stairs = action.get('debug_take_stairs')
         show_character_screen = action.get('show_character_screen')
         left_click = mouse_action.get('left_click')
         right_click = mouse_action.get('right_click')
@@ -95,13 +98,20 @@ class GameAct():
             for entity in state.entities:
                 if entity.stairs and entity.x == state.player.x and entity.y == state.player.y:
                     state.entities = state.game_map.next_floor(state.player, state.message_log, CONFIG, component)
-                    # TODO: This should not be here
                     self.scene.fov_map = GameScene.init_fov_map(state.game_map)
                     self.scene.fov_recompute = True
                     tcod.console_clear(self.scene.owner.con)
                     break
             else:
                 state.message_log.add_message(Message('No stairs found', tcod.yellow))
+
+        if debug_take_stairs:
+            for entity in state.entities:
+                if entity.stairs:
+                    state.entities = state.game_map.next_floor(state.player, state.message_log, CONFIG, component)
+                    self.scene.fov_map = GameScene.init_fov_map(state.game_map)
+                    self.scene.fov_recompute = True
+                    tcod.console_clear(self.scene.owner.con)
             
         if exit:
             if state.game_state in (GameStates.CHARACTER_SCREEN, GameStates.INVENTORY):
@@ -119,6 +129,10 @@ class GameAct():
         if hotkey and state.game_state == GameStates.PLAYERS_TURN:
             results = state.player.inventory.use_hotkey(int(hotkey), entities=state.entities, fov_map=self.scene.fov_map)
             player_turn_result.extend(results)
+
+        if revive and state.game_state == GameStates.PLAYER_DEAD:
+            state.game_state = GameStates.PLAYERS_TURN
+            state.player.fighter.hp = state.player.fighter.max_hp
        
         if move and state.game_state == GameStates.PLAYERS_TURN:
             dx, dy = move
@@ -176,8 +190,43 @@ class GameAiAct:
                 for result in enemy_turn_result:
                     message = result.get('message')
                     dead_entity = result.get('dead')
+                    summon = result.get('summon')
                     if message:
                         state.message_log.add_message(message)
+                    if summon:
+                        monster = summon.get('monster')
+                        level = summon.get('level')
+                        summoned = None
+                        if state.game_map.is_free(state.entities, entity.x+1, entity.y):
+                            summoned = make_monster(monster,level)
+                            summoned.x = entity.x+1
+                            summoned.y = entity.y
+                        elif state.game_map.is_free(state.entities, entity.x+1, entity.y+1):
+                            summoned = make_monster(monster,level)
+                            summoned.x = entity.x+1
+                            summoned.y = entity.y+1
+                        elif state.game_map.is_free(state.entities, entity.x-1, entity.y+1):
+                            summoned = make_monster(monster,level)
+                            summoned.x = entity.x-1
+                            summoned.y = entity.y+1
+                        elif state.game_map.is_free(state.entities, entity.x-1, entity.y):
+                            summoned = make_monster(monster,level)
+                            summoned.x = entity.x-1
+                            summoned.y = entity.y
+                        elif state.game_map.is_free(state.entities, entity.x-1, entity.y-1):
+                            summoned = make_monster(monster,level)
+                            summoned.x = entity.x-1
+                            summoned.y = entity.y-1
+                        elif state.game_map.is_free(state.entities, entity.x, entity.y+1):
+                            summoned = make_monster(monster,level)
+                            summoned.x = entity.x
+                            summoned.y = entity.y+1
+                        elif state.game_map.is_free(state.entities, entity.x, entity.y-1):
+                            summoned = make_monster(monster,level)
+                            summoned.x = entity.x
+                            summoned.y = entity.y-1
+                        if summoned is not None:
+                            state.entities.append(summoned)
                     if dead_entity:
                         if dead_entity == state.player:   
                             message, state.game_state = GameAiAct.kill_player(dead_entity)
@@ -211,7 +260,7 @@ class GameAiAct:
         return death_message
 
 class GameStateReporter:
-    def update(self, state, results):
+    def update(self, state, results, scene):
         for result in results:
             print("Processing result %s" % result)
             message = result.get('message')
@@ -220,6 +269,7 @@ class GameStateReporter:
             item_consumed = result.get('consumed')
             item_dropped = result.get('item_dropped')
             equip = result.get('equip')
+            boss_dead = result.get('boss_dead')
             targeting = result.get('targeting')
             targeting_index = result.get('targeting_index')
             targeting_cancelled = result.get('targeting_cancelled')
@@ -248,6 +298,13 @@ class GameStateReporter:
             if loot:
                 message = state.player.purse.add_coins(loot) 
                 #state.message_log.add_message(message)
+            if boss_dead:
+                state.entities = state.game_map.next_floor(state.player, state.message_log, CONFIG, component)
+                scene.fov_map = GameScene.init_fov_map(state.game_map)
+                scene.fov_recompute = True
+                tcod.console_clear(scene.owner.con)
+
+                pass
             if item_consumed:
                 state.game_state = GameStates.ENEMY_TURN
             if open_shop:
@@ -270,7 +327,6 @@ class GameStateReporter:
                 state.game_state = GameStates.TARGETING
                 state.targeting_item = targeting
                 state.message_log.add_message(state.targeting_item.item.targeting_message)
-                print("result: %s" % result)
                 if targeting_area and targeting_radius:
                     state.targeting_area = True
                     state.targeting_radius = targeting_radius
@@ -322,7 +378,7 @@ class GameStage:
         action_mouse_move = (self.last_x, self.last_y)
 
         results = self.act.perform(self.state, action, action_mouse_click, action_mouse_move)
-        external_events = self.reporter.update(self.state, results)
+        external_events = self.reporter.update(self.state, results, self.scene)
 
         if self.state.game_state == GameStates.ENEMY_TURN:
             self.ai_act.perform(self.state)

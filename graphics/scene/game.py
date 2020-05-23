@@ -53,10 +53,8 @@ class GameScene:
                             tcod.console_set_char_background(con, x, y, colors.get('light_ground'), tcod.BKGND_SET)
                             if state.game_state == GameStates.TARGETING:
                                 if state.targeting_area and self.distance(x, y, state.mouse_x, state.mouse_y) <= state.targeting_radius:
-                                    print("extra area")
                                     tcod.console_set_char_background(con, x, y, tcod.light_red, tcod.BKGND_SET)
                                 elif x == state.mouse_x and y == state.mouse_y:
-                                    print("exact area (%s) (%i)" % (str(state.targeting_area), state.targeting_radius))
                                     tcod.console_set_char_background(con, x, y, tcod.light_red, tcod.BKGND_SET)
                                     
                             if state.game_state == GameStates.TARGETING and x == state.mouse_x and y == state.mouse_y:
@@ -76,30 +74,58 @@ class GameScene:
                     elif self.redraw and state.game_state in (GameStates.PLAYERS_TURN, GameStates.TARGETING):
                         tcod.console_put_char(con, x, y, ' ', tcod.BKGND_NONE)
 
+        tcod.console_set_default_background(panel, tcod.black)
+        tcod.console_clear(panel)
+        monster_scan = 0
+        max_monster_scan = 6
         for e in sorted(state.entities, key=lambda x: x.render_order.value):
             #if tcod.map_is_in_fov(self.self.fov_map, e.x, e.y) or (e.stairs and self.game_map.tiles[e.x][e.y].explored):
             if tcod.map_is_in_fov(self.fov_map, e.x, e.y) or (e.stairs):
                 tcod.console_set_default_foreground(con, e.color)
                 tcod.console_put_char(con, e.x, e.y, e.char, tcod.BKGND_NONE)
+                if monster_scan < max_monster_scan and (e.ai is not None or e.item is not None or e.container is not None):
+                    monster_scan += 1
+                    tcod.console_set_default_foreground(panel, e.color)
+                    tcod.console_put_char(panel, 1, monster_scan, e.char, tcod.BKGND_NONE)
+                    tcod.console_set_default_foreground(panel, tcod.white)
+                    if e.fighter:
+                        tcod.console_set_default_foreground(panel, tcod.red)
+                        tcod.console_print_ex(panel, 3, monster_scan, tcod.BKGND_NONE, tcod.LEFT, str(e.fighter.hp))
+                        tcod.console_set_default_foreground(panel, tcod.white)
+                        tcod.console_print_ex(panel, 6, monster_scan, tcod.BKGND_NONE, tcod.LEFT, e.name[:14])
+                    else:
+                        tcod.console_print_ex(panel, 3, monster_scan, tcod.BKGND_NONE, tcod.LEFT, e.name)
 
         tcod.console_set_char_background(panel, 10, 10, tcod.violet, tcod.BKGND_SET)
 
-        tcod.console_set_default_background(panel, tcod.black)
-        tcod.console_clear(panel)
+        tcod.console_set_default_background(hotkeys, tcod.black)
+        tcod.console_clear(hotkeys)
+
+        # Message Log
         y = 1
         for message in state.message_log.messages:
             tcod.console_set_default_foreground(panel, message.color)
             tcod.console_print_ex(panel, state.message_log.x, y, tcod.BKGND_NONE, tcod.LEFT, message.text)
             y += 1
 
-        render_bar(panel, 1, 1, CONFIG.get('BAR_WIDTH'), 'HP', state.player.fighter.hp, state.player.fighter.max_hp,
+        # Health + stats
+        render_bar(hotkeys, 16, 2, CONFIG.get('BAR_WIDTH'), 'HP', state.player.fighter.hp, state.player.fighter.max_hp,
                    tcod.light_red, tcod.darker_red)
-        tcod.console_print_ex(panel, 1, 3, tcod.BKGND_NONE, tcod.LEFT, 
+        tcod.console_print_ex(hotkeys, 40, 2, tcod.BKGND_NONE, tcod.LEFT, 
                                  'Dungeon Level: %s' % state.game_map.dungeon_level)
 
-        tcod.console_print_ex(panel, 1, 4, tcod.BKGND_NONE, tcod.LEFT,
+        tcod.console_print_ex(hotkeys, 40, 3, tcod.BKGND_NONE, tcod.LEFT,
                                  'Gold Coins: %i' % state.player.purse.coins)
 
+        tcod.console_print_ex(hotkeys, 60, 2, tcod.BKGND_NONE, tcod.LEFT,
+                              'Power: %i' % state.player.fighter.base_power)
+        tcod.console_print_ex(hotkeys, 60, 3, tcod.BKGND_NONE, tcod.LEFT,
+                              'Defense: %i' % state.player.fighter.base_defense)
+        tcod.console_print_ex(hotkeys, 60, 4, tcod.BKGND_NONE, tcod.LEFT,
+                              'Magic: %i' % state.player.fighter.base_magic)
+
+
+        # Hotkeys
         slot_pos = 0
         for slot in state.player.inventory.tome_slots:
             rel_pos = (slot_pos*3)

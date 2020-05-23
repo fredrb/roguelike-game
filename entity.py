@@ -19,6 +19,7 @@ class Entity:
         shop=None,
         purse=None,
         container=None,
+        boss=None,
         inventory=None):
 
         self.x = x
@@ -39,6 +40,7 @@ class Entity:
         self.shop = shop
         self.purse = purse
         self.container = container
+        self.boss = boss
 
         if self.fighter:
             self.fighter.owner = self
@@ -50,8 +52,6 @@ class Entity:
             self.inventory.owner = self
         if self.stairs:
             self.stairs.owner = self
-        if self.level:
-            self.level.owner = self
         if self.equipment:
             self.equipment.owner = self
         if self.purse:

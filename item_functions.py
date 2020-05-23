@@ -1,6 +1,9 @@
 import tcod as libtcod
+import random
+import math
 from message_log import Message
 from components.ai import ConfusedMonster, ParalysedMonster
+from functools import reduce
 
 def heal(*args, **kwargs):
     entity = args[0]
@@ -8,15 +11,18 @@ def heal(*args, **kwargs):
 
     results = []
 
+    base_heal = math.ceil(entity.fighter.base_magic/4)*5 + amount
     if entity.fighter.hp == entity.fighter.max_hp:
         results.append({'consumed': False, 'message': Message('You are already at full HP', libtcod.yellow)})
     else:
-        entity.fighter.heal(amount)
-        results.append({'consumed': True, 'message': Message('Your wounds start to feel better', libtcod.green)})
+        rolled_amount = random.randint(math.ceil(base_heal/1.5), base_heal*2)
+        entity.fighter.heal(rolled_amount)
+        results.append({'consumed': True, 'message': Message('Tome of Healing recovered %i HP' % rolled_amount, libtcod.green)})
 
     return results
 
 def cast_magic_missile(*args, **kwargs):
+    caster = args[0]
     entities = kwargs.get('entities')
     damage = kwargs.get('damage')
     fov_map = kwargs.get('fov_map')
@@ -33,52 +39,27 @@ def cast_magic_missile(*args, **kwargs):
 
     for entity in entities:
         if entity.x == target_x and entity.y == target_y and entity.ai:
-            results.extend(entity.fighter.take_damage(damage))
+            factor = caster.fighter.base_magic
+            print("Factor: %i" % factor)
+            missiles = math.ceil(factor/10)
+            base_dmg = math.ceil((damage + factor)/2)
+            print("missiles %i" % missiles)
+            dmg = [random.randint(int(base_dmg/4), int(base_dmg*1.5)) for _ in range(missiles)]
+            print("%s" % str(dmg))
+            rolled_dmg = reduce(lambda x,acc: acc+x, dmg)
+            print("final damage: %s" % str(rolled_dmg))
+            results.extend(entity.fighter.take_damage(rolled_dmg))
             results.append({
                 'consumed': True,
-                'message': Message('Two magic missiles hit %s. Damage taken: %i' % (entity.name, damage), libtcod.cyan)})
+                'message': Message('%i magic missile(s) hit %s. Damage taken: %i' % (missiles, entity.name, rolled_dmg), libtcod.cyan)})
             break
     else:
         results.append({'consumed': False, 'message': Message('There is no targetable enemy at that location.', libtcod.yellow)})
 
     return results
 
-def cast_lightning(*args, **kwargs):
-    caster = args[0]
-    entities = kwargs.get('entities')
-    fov_map = kwargs.get('fov_map')
-    damage = kwargs.get('damage')
-    maximum_range = kwargs.get('maximum_range')
-
-    results = []
-
-    target = None
-    closest_distance = maximum_range + 1
-
-    for entity in entities:
-        if entity.fighter and entity != caster and libtcod.map_is_in_fov(fov_map, entity.x, entity.y):
-            distance = caster.distance_to(entity)
-            if distance < closest_distance:
-                target = entity
-                closest_distance = distance
-
-    if target:
-        results.append({
-            'consumed': True, 
-            'target': target, 
-            'message': Message('A lightning bolt strikes %s! Damage taken: %i' % (target.name, damage), libtcod.red)
-        })
-        results.extend(target.fighter.take_damage(damage))
-    else:
-        results.append({
-            'consumed': False,
-            'target': None,
-            'message': Message('No enemies found', libtcod.gray)
-        })
-
-    return results
-
 def cast_fireball(*args, **kwargs):
+    caster = args[0]
     entities = kwargs.get('entities')
     fov_map = kwargs.get('fov_map')
     damage = kwargs.get('damage')
@@ -94,14 +75,17 @@ def cast_fireball(*args, **kwargs):
 
     results.append({'consumed': True, 'message': Message('The fireball explodes, burning everything within {0} tiles!'.format(radius), libtcod.orange)})
 
+    base_dmg = math.ceil(caster.fighter.base_magic * (damage*0.1)) + damage
     for entity in entities:
         if entity.distance(target_x, target_y) <= radius and entity.fighter:
-            results.append({'message': Message('The {0} gets burned for {1} hit points.'.format(entity.name, damage), libtcod.orange)})
-            results.extend(entity.fighter.take_damage(damage))
+            rolled_dmg = random.randint(int(base_dmg/2), base_dmg*2)
+            results.append({'message': Message('The {0} gets burned for {1} hit points.'.format(entity.name, rolled_dmg), libtcod.orange)})
+            results.extend(entity.fighter.take_damage(rolled_dmg))
 
     return results
 
 def cast_paralysis(*args, **kwargs):
+    caster = args[0]
     entities = kwargs.get('entities')
     fov_map = kwargs.get('fov_map')
     target_x = kwargs.get('target_x')
@@ -118,12 +102,13 @@ def cast_paralysis(*args, **kwargs):
 
     for entity in entities:
         if entity.x == target_x and entity.y == target_y and entity.ai:
-            confused_ai = ParalysedMonster(entity.ai, 10)
+            turns = 10 + math.ceil(caster.fighter.base_magic/10) 
+            confused_ai = ParalysedMonster(entity.ai, turns)
             confused_ai.owner = entity
             entity.ai = confused_ai
             results.append({
                 'consumed': True,
-                'message': Message('%s is paralysed by spell' % entity.name, libtcod.light_cyan)})
+                'message': Message('%s is paralysed for %i turns' % (entity.name, turns), libtcod.light_cyan)})
             break
     else:
         results.append({'consumed': False, 'message': Message('There is no targetable enemy at that location.', libtcod.yellow)})

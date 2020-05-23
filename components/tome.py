@@ -8,7 +8,7 @@ class StrengthUpgrade:
 
     def apply(self, fighter):
         fighter.base_power += self.factor
-        return {'message': Message('Player got +%i STR' % self.factor, libtcod.light_blue)}
+        return {'message': Message('Player got +%i Power' % self.factor, libtcod.light_blue)}
 
 class AgilityUpgrade:
     def __init__(self, factor=1):
@@ -17,7 +17,7 @@ class AgilityUpgrade:
 
     def apply(self, fighter):
         fighter.base_defense += self.factor
-        return {'message': Message('Player got +%i AGI' % self.factor, libtcod.light_blue)}
+        return {'message': Message('Player got +%i Defense' % self.factor, libtcod.light_blue)}
 
 class HPUpgrade:
     def __init__(self, factor=20):
@@ -26,10 +26,20 @@ class HPUpgrade:
 
     def apply(self, fighter):
         fighter.base_max_hp += self.factor
+        fighter.hp += self.factor
         return {'message': Message('Player got +%i MAX HP' % self.factor, libtcod.light_blue)}
 
+class MagicUpgrade:
+    def __init__(self, factor=1):
+        self.factor = factor
+        self.stat = "Magic"
+
+    def apply(self, fighter):
+        fighter.base_magic += self.factor
+        return {'message': Message('Player got +%i Magic' % self.factor, libtcod.light_blue)}
+
 class Tome:
-    def __init__(self, name, price, component):
+    def __init__(self, name, price, component, rise_per=5):
         self.name = name
         self.price = price
         self.component = component
