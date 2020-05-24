@@ -15,13 +15,13 @@ from entity import Entity
 def component(name):
     # TODO: Change this into a proper factory
     component_map = {
-        "PLAYER"    : Fighter(hp=60, defense=2, power=5, magic=2),
+        "PLAYER"    : Fighter(hp=70, defense=4, power=5, magic=3),
         "ORC"       : Fighter(hp=10, defense=0, power=3, xp=35),
         "TROLL"     : Fighter(hp=16, defense=1, power=4, xp=100),
         "BASIC"     : BasicMonster(),
         "INVENTORY" : Inventory(26),
         "EQUIPMENT" : Equipment(),
-        "PURSE"     : Purse(initial=9999)
+        "PURSE"     : Purse()
     }
     return component_map[name]
 
@@ -53,7 +53,7 @@ def get_game_variables():
                              CONFIG.get("MESSAGE_WIDTH"),
                              CONFIG.get("MESSAGE_HEIGHT"))
 
-    game_state = GameStates.PLAYERS_TURN
+    game_state = GameStates.INSTRUCTIONS
 
     return player, entities, game_map, message_log, game_state
 

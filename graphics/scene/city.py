@@ -1,5 +1,4 @@
 import tcod
-from menu import city_bg
 from globals import CONFIG
 
 class CityMenuScene:
@@ -12,8 +11,4 @@ class CityMenuScene:
         print("Showing city menu")
         if self.owner is None:
             raise SystemError("CityMenuScene is detached from render")
-        city_bg(self.owner.root,
-            self.main_menu_background_image,
-            CONFIG.get('WIDTH'),
-            CONFIG.get('HEIGHT'))
         tcod.console_flush()

@@ -11,10 +11,11 @@ class GameStates(Enum):
     LEVEL_UP = 7
     CHARACTER_SCREEN = 8
     SHOP = 9
+    INSTRUCTIONS = 10
 
 class RenderOrder(Enum):
-    STAIRS = auto()
     CORPSE = auto()
+    STAIRS = auto()
     ITEM = auto()
     ACTOR = auto()
 
@@ -22,15 +23,16 @@ class EquipmentSlots(Enum):
     MAIN_HAND = auto()
     OFF_HAND = auto()
 
-
-
-
 CONFIG = {
     "WIDTH"             : 80,
     "HEIGHT"            : 55,
     "MAP_WIDTH"         : 80,
-    "MAP_HEIGHT"        : 43,
+    "MAP_HEIGHT"        : 39,
+    "MAP_Y"             : 4,
     "TITLE"             : "Kenya Survival",
+
+    # UI - Upper Bar
+    "UPPER_BAR_HEIGHT"  : 4,
 
     # UI - HP Bar
     "BAR_WIDTH"         : 20,

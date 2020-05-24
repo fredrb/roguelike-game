@@ -11,6 +11,50 @@ class GameInputHandler:
     def on_key(self, key, state):
         return handle_keys(key, state.game_state)
 
+class GameStats():
+    def __init__(self):
+        self.monster_kills = {}
+        self.killed_by = None
+        self.turns = 0
+        self.damage_dealt = 0
+        self.magic_damage = 0
+        self.damage_received = 0
+        self.bosses_killed = 0
+        self.chests_open = 0
+        self.healed = 0
+        self.paralyzed = 0
+        self.items_picked = 0
+        self.elder_dragons_killed = 0
+
+    def compute_loot(self, item):
+        self.items_picked += 1 
+
+    def compute_magic_damage(self, amount):
+        self.magic_damage += amount
+        
+    def compute_damage(self, target, amount):
+        print("Compute Damage on %s - amount: %s" % (target, amount))
+        if target == "Player":
+            self.damage_received += amount
+        else:
+            self.damage_dealt += amount
+
+    def killed_monster(self, name):
+        if not self.monster_kills.get(name):
+            self.monster_kills[name] = 0
+        self.monster_kills[name] += 1
+        if name == "Elder Dragon":
+           self.elder_dragons_killed += 1
+
+    def most_killed_enemy(self):
+        kills = ("", 0)
+        for kill in self.monster_kills.keys():
+            current = self.monster_kills[kill]
+            if current > kills[1]:
+                kills = (kill, current)
+        return kills
+
+
 class GameState():
     def __init__(self):
         self.loaded = False
@@ -26,6 +70,7 @@ class GameState():
         self.targeting_index = None
         self.mouse_x = 0
         self.mouse_y = 0
+        self.history = GameStats()
 
 class GameAct():
     def __init__(self, scene):
@@ -36,6 +81,7 @@ class GameAct():
         player_turn_result = []
 
         exit = action.get('exit')
+        exit_instructions = action.get('exit_instructions')
         move = action.get('move')
         pickup = action.get('pickup')
         show_inventory = action.get('show_inventory')
@@ -52,6 +98,11 @@ class GameAct():
         left_click = mouse_action.get('left_click')
         right_click = mouse_action.get('right_click')
         (mouse_x, mouse_y) = mouse_move
+
+        if exit_instructions:
+            state.game_state = GameStates.PLAYERS_TURN
+            redraw = True
+            self.scene.fov_recompute = True
 
         if show_inventory:
             if state.game_state == GameStates.INVENTORY:
@@ -170,6 +221,7 @@ class GameAct():
         if state.game_state == GameStates.TARGETING:
             if left_click:
                 target_x, target_y = left_click
+                target_y = target_y - CONFIG.get('MAP_Y') # Offset
                 item_use_results = state.player.inventory.use_hotkey(state.targeting_index, entities=state.entities, fov_map=self.scene.fov_map,
                                                         target_x=target_x, target_y=target_y)
                 player_turn_result.extend(item_use_results)
@@ -184,6 +236,7 @@ class GameAiAct:
         self.scene = scene
 
     def perform(self, state):
+        state.history.turns += 1
         for entity in state.entities:
             if entity.ai:
                 enemy_turn_result = entity.ai.take_turn(state.player, self.scene.fov_map, state.game_map, state.entities)
@@ -191,6 +244,11 @@ class GameAiAct:
                     message = result.get('message')
                     dead_entity = result.get('dead')
                     summon = result.get('summon')
+                    stat_damage = result.get('stat_damage')
+                    if stat_damage:
+                        target = stat_damage.get('target')
+                        amount = stat_damage.get('amount')
+                        state.history.compute_damage(target, amount)
                     if message:
                         state.message_log.add_message(message)
                     if summon:
@@ -228,7 +286,8 @@ class GameAiAct:
                         if summoned is not None:
                             state.entities.append(summoned)
                     if dead_entity:
-                        if dead_entity == state.player:   
+                        if dead_entity == state.player:
+                            state.history.killed_by = entity
                             message, state.game_state = GameAiAct.kill_player(dead_entity)
                         else:
                             message = GameAiAct.kill_monster(dead_entity)
@@ -264,6 +323,10 @@ class GameStateReporter:
         for result in results:
             print("Processing result %s" % result)
             message = result.get('message')
+            stat_heal = result.get('stat_heal')
+            stat_damage = result.get('stat_damage')
+            stat_magic_damage = result.get('stat_magic_damage')
+            stat_paralyzed = result.get('stat_paralyzed')
             dead_entity = result.get('dead')
             item_added = result.get('item_added')
             item_consumed = result.get('consumed')
@@ -279,6 +342,16 @@ class GameStateReporter:
             open_shop = result.get('open_shop')
             container_consumed = result.get('container_consumed')
             loot = result.get('loot')
+            if stat_heal:
+                state.history.healed += stat_heal
+            if stat_paralyzed:
+                state.history.paralyzed += 1
+            if stat_magic_damage:
+                state.history.compute_magic_damage(stat_magic_damage)
+            if stat_damage:
+                target = stat_damage.get('target')
+                amount = stat_damage.get('amount')
+                state.history.compute_damage(target, amount)
             if exit_game:
                 return {'exit_game': True}
             if message:
@@ -287,24 +360,27 @@ class GameStateReporter:
                 if dead_entity == state.player:   
                     message, state.game_state = GameAiAct.kill_player(dead_entity)
                 else:
+                    state.history.killed_monster(dead_entity.name)
                     message = GameAiAct.kill_monster(dead_entity)
                 state.message_log.add_message(message)
             if item_added:
                 state.entities.remove(item_added)
+                state.history.compute_loot(item_added)
                 state.game_state = GameStates.ENEMY_TURN
             if container_consumed:
                 state.entities.remove(container_consumed)
+                state.history.chests_open += 1
                 state.game_state = GameStates.ENEMY_TURN
             if loot:
                 message = state.player.purse.add_coins(loot) 
                 #state.message_log.add_message(message)
             if boss_dead:
+                print("Boss dead event!")
+                state.history.bosses_killed += 1
                 state.entities = state.game_map.next_floor(state.player, state.message_log, CONFIG, component)
                 scene.fov_map = GameScene.init_fov_map(state.game_map)
                 scene.fov_recompute = True
                 tcod.console_clear(scene.owner.con)
-
-                pass
             if item_consumed:
                 state.game_state = GameStates.ENEMY_TURN
             if open_shop:

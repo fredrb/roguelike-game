@@ -11,13 +11,17 @@ def heal(*args, **kwargs):
 
     results = []
 
-    base_heal = math.ceil(entity.fighter.base_magic/4)*5 + amount
-    if entity.fighter.hp == entity.fighter.max_hp:
+    base_heal = math.ceil(entity.fighter.base_magic/4)*5 + amount + math.ceil(entity.fighter.base_max_hp*0.1)
+    if entity.fighter.hp == entity.fighter.base_max_hp:
         results.append({'consumed': False, 'message': Message('You are already at full HP', libtcod.yellow)})
     else:
         rolled_amount = random.randint(math.ceil(base_heal/1.5), base_heal*2)
         entity.fighter.heal(rolled_amount)
-        results.append({'consumed': True, 'message': Message('Tome of Healing recovered %i HP' % rolled_amount, libtcod.green)})
+        results.append({
+            'consumed': True,
+            'message': Message('Tome of Healing recovered %i HP' % rolled_amount, libtcod.green),
+            'stat_heal': rolled_amount
+        })
 
     return results
 
@@ -41,7 +45,8 @@ def cast_magic_missile(*args, **kwargs):
         if entity.x == target_x and entity.y == target_y and entity.ai:
             factor = caster.fighter.base_magic
             print("Factor: %i" % factor)
-            missiles = math.ceil(factor/10)
+            #missiles = math.ceil(factor/10)
+            missiles = math.ceil(math.log(factor, 10) + math.ceil(factor/100))
             base_dmg = math.ceil((damage + factor)/2)
             print("missiles %i" % missiles)
             dmg = [random.randint(int(base_dmg/4), int(base_dmg*1.5)) for _ in range(missiles)]
@@ -51,7 +56,9 @@ def cast_magic_missile(*args, **kwargs):
             results.extend(entity.fighter.take_damage(rolled_dmg))
             results.append({
                 'consumed': True,
-                'message': Message('%i magic missile(s) hit %s. Damage taken: %i' % (missiles, entity.name, rolled_dmg), libtcod.cyan)})
+                'message': Message('%i magic missile(s) hit %s. Damage taken: %i' % (missiles, entity.name, rolled_dmg), libtcod.cyan),
+                'stat_magic_damage': rolled_dmg
+            })
             break
     else:
         results.append({'consumed': False, 'message': Message('There is no targetable enemy at that location.', libtcod.yellow)})
@@ -79,9 +86,11 @@ def cast_fireball(*args, **kwargs):
     for entity in entities:
         if entity.distance(target_x, target_y) <= radius and entity.fighter:
             rolled_dmg = random.randint(int(base_dmg/2), base_dmg*2)
-            results.append({'message': Message('The {0} gets burned for {1} hit points.'.format(entity.name, rolled_dmg), libtcod.orange)})
+            results.append({
+                'message': Message('The {0} gets burned for {1} hit points.'.format(entity.name, rolled_dmg), libtcod.orange),
+                'stat_magic_damage': rolled_dmg
+            })
             results.extend(entity.fighter.take_damage(rolled_dmg))
-
     return results
 
 def cast_paralysis(*args, **kwargs):
@@ -108,7 +117,9 @@ def cast_paralysis(*args, **kwargs):
             entity.ai = confused_ai
             results.append({
                 'consumed': True,
-                'message': Message('%s is paralysed for %i turns' % (entity.name, turns), libtcod.light_cyan)})
+                'message': Message('%s is paralysed for %i turns' % (entity.name, turns), libtcod.light_cyan),
+                'stat_paralyzed': True
+            })
             break
     else:
         results.append({'consumed': False, 'message': Message('There is no targetable enemy at that location.', libtcod.yellow)})

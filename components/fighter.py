@@ -49,6 +49,7 @@ class Fighter:
                 results.append({'message': 
                     Message('Looted %i gold coins from %s' % (self.owner.purse.coins, self.owner.name), libtcod.light_green)})
             if self.owner.boss:
+                print("Boss killed!!")
                 results.append({
                     'message': Message('Boss %s slain! Proceed to the stairs' % self.owner.name, libtcod.light_yellow)
                 })
@@ -71,7 +72,8 @@ class Fighter:
         if damage > 0:
             text = '%s attacks %s for %i hit points' % (self.owner.name.capitalize(), target.name, damage)
             results.append({
-                'message': Message(text, libtcod.white)
+                'message': Message(text, libtcod.white),
+                'stat_damage': {'amount': damage, 'target': target.name}
             })
             results.extend(target.fighter.take_damage(damage))
         else:

@@ -1,5 +1,5 @@
 import tcod as libtcod
-from globals import GameStates
+from globals import GameStates, CONFIG 
 
 # TODO: Should have more explicit events
 # Show inventory -> Toggle Inventory
@@ -29,6 +29,9 @@ def handle_keys(key, game_state):
         return handle_character_menu(key)
     if game_state == GameStates.SHOP:
         return handle_shop(key)
+    if game_state == GameStates.INSTRUCTIONS:
+        if key is not None:
+            return {'exit_instructions': True}
     return {}
 
 def handle_shop(key):
@@ -88,12 +91,12 @@ def handle_player_inventory(key):
 
     
 def handle_player_dead(key):
-    if key == ord('i'):
-        return {'show_inventory': True}
     if key == ord('r'):
         return {'revive': True}
-    else:
+    elif key == 27:
         return {'exit': True}
+    else:
+        return {}
 
 def handle_player_turn(key):
     if key:

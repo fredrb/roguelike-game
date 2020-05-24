@@ -97,13 +97,13 @@ class GameMap:
             if not any([entity for entity in entities if entity.x == x and entity.y == y]):
                 # Item drop roll
                 item_chance = randint(0, 100)
-                if item_chance < 40:
+                if item_chance < 30: # 30%
                     item = make_item("health_tome")
-                elif item_chance < 70:
+                elif item_chance < 60: # 30%
                     item = make_item("magic_missiles")
-                elif item_chance < 90:
+                elif item_chance < 80: # 20%
                     item = make_item("paralysis")
-                else:
+                else: #20%
                     item = make_item("fireball")
                 item.x = x
                 item.y = y
@@ -131,26 +131,61 @@ class GameMap:
         return entities
 
     def make_boss_map(self, player, entities):
-        new_room = Rect(10, 10, 30, 30)
-        self.future_stairs_x = 10
-        self.future_stairs_y = 10
+        new_room = Rect(10, 10, 10, 10)
         self.create_room(new_room)
 
         player.x = 12
-        player.y = 25
+        player.y = 15
 
-        dragon = make_monster('dragon', self.dungeon_level+3)
-        dragon.x = 32
-        dragon.y = 25
-        warlock = make_monster('warlock', self.dungeon_level+3)
-        warlock.x = 30
-        dragon.y = 27
-        entities.append(dragon)
-        entities.append(warlock)
-        
+        if (self.dungeon_level <= 7):
+            dragon = make_monster('dragon', self.dungeon_level+3, boss=True)
+            dragon.x = 18
+            dragon.y = 15 
+            entities.append(dragon)
+        elif (self.dungeon_level <= 14):
+            dragon = make_monster('dragon', self.dungeon_level+3, boss=True)
+            dragon.x = 18
+            dragon.y = 15 
+            warlock1 = make_monster('warlock', self.dungeon_level+2)
+            warlock1.x = 19
+            warlock1.y = 14 
+            warlock2 = make_monster('warlock', self.dungeon_level+2)
+            warlock2.x = 19
+            warlock2.y = 16 
+            entities.append(dragon)
+            entities.append(warlock1)
+            entities.append(warlock2)
+        elif (self.dungeon_level <= 28):
+            dragon = make_monster('red_dragon', self.dungeon_level+4, boss=True)
+            dragon.x = 18
+            dragon.y = 15 
+            entities.append(dragon)
+            warlock1 = make_monster('warlock', self.dungeon_level+2)
+            warlock1.x = 19
+            warlock1.y = 14 
+            warlock2 = make_monster('warlock', self.dungeon_level+2)
+            warlock2.x = 19
+            warlock2.y = 16 
+            entities.append(dragon)
+            entities.append(warlock1)
+            entities.append(warlock2)
+        else:
+            dragon = make_monster('elder_dragon', self.dungeon_level+4, boss=True)
+            dragon.x = 18
+            dragon.y = 15 
+            entities.append(dragon)
+            warlock1 = make_monster('shaman', self.dungeon_level+2)
+            warlock1.x = 19
+            warlock1.y = 14 
+            warlock2 = make_monster('shaman', self.dungeon_level+2)
+            warlock2.x = 19
+            warlock2.y = 16 
+            entities.append(dragon)
+            entities.append(warlock1)
+            entities.append(warlock2)
 
     def make_map(self, max_rooms, min_size, max_size, player, entities, max_monsters, max_items, components):
-        if ((self.dungeon_level % 10) == 0):
+        if ((self.dungeon_level % 7) == 0):
             return self.make_boss_map(player, entities)
         rooms = []
         num_rooms = 0

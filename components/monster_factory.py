@@ -45,7 +45,7 @@ class GoblinFactory(MonsterFactory):
 
 class GoblinWarriorFactory(MonsterFactory):
     def __init__(self):
-        super().base_monster(10, 3, 0, 1, 1, 1)
+        super().base_monster(10, 3, 0, 2, 1, 2)
     
     def make(self, level, boss):
         monster = Entity(0, 0, 'g', tcod.dark_green, 'Goblin Warrior', True,
@@ -58,7 +58,7 @@ class GoblinWarriorFactory(MonsterFactory):
 
 class GoblinWarlockFactory(MonsterFactory):
     def __init__(self):
-        super().base_monster(20, 4, 1, 1, 1, 2)
+        super().base_monster(20, 4, 1, 2, 1, 2)
 
     def make(self, level, boss):
         monster = Entity(0, 0, 'w', tcod.purple, 'Goblin Warlock', True,
@@ -84,7 +84,7 @@ class GoblinChiefFactory(MonsterFactory):
 
 class TrollFactory(MonsterFactory):
     def __init__(self):
-        super().base_monster(40, 6, 3, 2, 6, 3)
+        super().base_monster(40, 4, 3, 3, 5, 2)
     
     def make(self, level, boss):
         monster = Entity(0, 0, 'T', tcod.light_red, 'Troll', True,
@@ -110,7 +110,7 @@ class TrollShamanFactory(MonsterFactory):
 
 class TrollChiefFactory(MonsterFactory):
     def __init__(self):
-        super().base_monster(60, 6, 5, 3, 12, 4)
+        super().base_monster(60, 6, 5, 10, 12, 10)
     
     def make(self, level, boss):
         monster = Entity(0, 0, 'T', tcod.dark_red, 'Troll Chief', True,
@@ -123,7 +123,7 @@ class TrollChiefFactory(MonsterFactory):
 
 class DragonFactory(MonsterFactory):
     def __init__(self):
-        super().base_monster(800, 10, 90, 6, 30, 4)
+        super().base_monster(800, 50, 90, 12, 30, 14)
     
     def make(self, level, boss):
         monster = Entity(0, 0, 'D', tcod.dark_green, 'Green Dragon', True,
@@ -137,7 +137,7 @@ class DragonFactory(MonsterFactory):
 
 class RedDragonFactory(MonsterFactory):
     def __init__(self):
-        super().base_monster(3650, 20, 18, 9, 52, 12)
+        super().base_monster(3650, 100, 18, 16, 52, 18)
     
     def make(self, level, boss):
         monster = Entity(0, 0, 'D', tcod.red, 'Red Dragon', True,
@@ -145,15 +145,34 @@ class RedDragonFactory(MonsterFactory):
                          fighter=super().get_fighter(level),
                          purse=Purse(initial=random.randint(18*level,35*level)),
                          level=level,
+                         boss=boss,
                          ai=BasicMonster())
         return monster
+
+class ElderDragonFactory(MonsterFactory):
+    def __init__(self):
+        super().base_monster(13650, 200, 48, 19, 92, 32)
+    
+    def make(self, level, boss):
+        monster = Entity(0, 0, 'D', tcod.cyan, 'Elder Dragon', True,
+                         render_order=RenderOrder.ACTOR,
+                         fighter=super().get_fighter(level),
+                         purse=Purse(initial=random.randint(98*level,135*level)),
+                         level=level,
+                         boss=boss,
+                         ai=BasicMonster())
+        return monster
+
 
 def make_monster(name, level, boss=False):
     factory_map = {
         'goblin': GoblinFactory(),
         'troll': TrollFactory(),
         'warlock': GoblinWarlockFactory(),
-        'dragon': DragonFactory()
+        'shaman': TrollShamanFactory(),
+        'dragon': DragonFactory(),
+        'red_dragon': RedDragonFactory(),
+        'elder_dragon': ElderDragonFactory()
     }
     return factory_map[name].make(level, boss)
 
