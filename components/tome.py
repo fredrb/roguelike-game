@@ -4,7 +4,7 @@ from message_log import Message
 class StrengthUpgrade:
     def __init__(self, factor=1):
         self.factor = factor
-        self.stat = "STR"
+        self.stat = "Power"
 
     def apply(self, fighter):
         fighter.base_power += self.factor
@@ -13,7 +13,7 @@ class StrengthUpgrade:
 class AgilityUpgrade:
     def __init__(self, factor=1):
         self.factor = factor
-        self.stat = "AGI"
+        self.stat = "Defense"
 
     def apply(self, fighter):
         fighter.base_defense += self.factor
@@ -22,12 +22,12 @@ class AgilityUpgrade:
 class HPUpgrade:
     def __init__(self, factor=20):
         self.factor = factor
-        self.stat = "MAX HP"
+        self.stat = "HP"
 
     def apply(self, fighter):
         fighter.base_max_hp += self.factor
         fighter.hp += self.factor
-        return {'message': Message('Player got +%i MAX HP' % self.factor, libtcod.light_blue)}
+        return {'message': Message('Player got +%i Max HP' % self.factor, libtcod.light_blue)}
 
 class MagicUpgrade:
     def __init__(self, factor=1):
@@ -47,6 +47,10 @@ class Tome:
     @property
     def text(self):
         return "(%i gp): %s [+%i %s]" % (self.price, self.name, self.component.factor, self.component.stat)
+
+    @property
+    def bonus(self):
+        return "+%i %s" % (self.component.factor, self.component.stat)
 
     def use(self, actor):
         results = []

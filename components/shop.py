@@ -12,9 +12,9 @@ class Shop:
     def options(self):
         factor = math.ceil(self.floor/3)
         return [
-            Tome("Tome of Strength", (10*factor), StrengthUpgrade(factor*1)),
-            Tome("Tome of Agility", (10*factor), AgilityUpgrade(factor*1)),
-            Tome("Tome of Vitality", (12*factor), HPUpgrade(factor*20)),
-            Tome("Tome of Magic", (15*factor), MagicUpgrade(factor*1))
+            Tome("Fighter's Tome", (10*factor), StrengthUpgrade(factor*1)),
+            Tome("Templar's Tome", (10*factor), AgilityUpgrade(factor*1)),
+            Tome("Cleric's Tome", (12*factor), HPUpgrade(factor*20)),
+            Tome("Wizard's Tome", (15*factor), MagicUpgrade(factor*1))
         ]
         

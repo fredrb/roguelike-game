@@ -29,7 +29,7 @@ CONFIG = {
     "MAP_WIDTH"         : 80,
     "MAP_HEIGHT"        : 39,
     "MAP_Y"             : 4,
-    "TITLE"             : "Kenya Survival",
+    "TITLE"             : "Dragons and Dungeons",
 
     # UI - Upper Bar
     "UPPER_BAR_HEIGHT"  : 4,

@@ -159,13 +159,15 @@ class GameMap:
             dragon = make_monster('red_dragon', self.dungeon_level+4, boss=True)
             dragon.x = 18
             dragon.y = 15 
-            entities.append(dragon)
             warlock1 = make_monster('warlock', self.dungeon_level+2)
             warlock1.x = 19
-            warlock1.y = 14 
+            warlock1.y = 11 
             warlock2 = make_monster('warlock', self.dungeon_level+2)
             warlock2.x = 19
-            warlock2.y = 16 
+            warlock2.y = 19 
+            troll1 = make_monster('troll', self.dungeon_level+3)
+            troll1.x = 14
+            troll1.y = 16
             entities.append(dragon)
             entities.append(warlock1)
             entities.append(warlock2)
@@ -173,13 +175,15 @@ class GameMap:
             dragon = make_monster('elder_dragon', self.dungeon_level+4, boss=True)
             dragon.x = 18
             dragon.y = 15 
-            entities.append(dragon)
+            troll1 = make_monster('troll_chief', self.dungeon_level+3)
+            troll1.x = 14
+            troll1.y = 16
             warlock1 = make_monster('shaman', self.dungeon_level+2)
-            warlock1.x = 19
-            warlock1.y = 14 
+            warlock1.x = 13
+            warlock1.y = 11 
             warlock2 = make_monster('shaman', self.dungeon_level+2)
-            warlock2.x = 19
-            warlock2.y = 16 
+            warlock2.x = 14
+            warlock2.y = 19 
             entities.append(dragon)
             entities.append(warlock1)
             entities.append(warlock2)

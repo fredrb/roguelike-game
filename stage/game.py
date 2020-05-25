@@ -90,14 +90,23 @@ class GameAct():
         take_stairs = action.get('take_stairs')
         drop_inventory = action.get('drop_inventory')
         targeting_cancelled = action.get('targeting_cancelled')
-        level_up = action.get('level_up')
         hotkey = action.get('hotkey')
-        revive = action.get('revive')
+        # revive = action.get('revive')
+        replay = action.get('replay')
+        show_help = action.get('show_help')
         debug_take_stairs = action.get('debug_take_stairs')
         show_character_screen = action.get('show_character_screen')
         left_click = mouse_action.get('left_click')
         right_click = mouse_action.get('right_click')
         (mouse_x, mouse_y) = mouse_move
+
+        if replay:
+            player_turn_result.append({
+                'next_stage': 'main_menu'
+            })
+
+        if show_help:
+            state.game_state = GameStates.INSTRUCTIONS
 
         if exit_instructions:
             state.game_state = GameStates.PLAYERS_TURN
@@ -180,10 +189,6 @@ class GameAct():
         if hotkey and state.game_state == GameStates.PLAYERS_TURN:
             results = state.player.inventory.use_hotkey(int(hotkey), entities=state.entities, fov_map=self.scene.fov_map)
             player_turn_result.extend(results)
-
-        if revive and state.game_state == GameStates.PLAYER_DEAD:
-            state.game_state = GameStates.PLAYERS_TURN
-            state.player.fighter.hp = state.player.fighter.max_hp
        
         if move and state.game_state == GameStates.PLAYERS_TURN:
             dx, dy = move
@@ -342,6 +347,7 @@ class GameStateReporter:
             open_shop = result.get('open_shop')
             container_consumed = result.get('container_consumed')
             loot = result.get('loot')
+            next_stage = result.get('next_stage')
             if stat_heal:
                 state.history.healed += stat_heal
             if stat_paralyzed:
@@ -413,6 +419,8 @@ class GameStateReporter:
             if targeting_cancelled:
                 state.game_state = state.previous_game_state
                 state.message_log.add_message(Message('Targeting Cancelled'))
+            if next_stage:
+                return {'next_stage': next_stage}
         return {}
 
 class GameStage:

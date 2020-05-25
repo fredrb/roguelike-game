@@ -15,7 +15,8 @@ from entity import Entity
 def component(name):
     # TODO: Change this into a proper factory
     component_map = {
-        "PLAYER"    : Fighter(hp=70, defense=4, power=5, magic=3),
+        "PLAYER"    : Fighter(hp=80, defense=5, power=7, magic=5),
+        #"PLAYER"    : Fighter(hp=99999, defense=99999, power=99999, magic=99999),
         "ORC"       : Fighter(hp=10, defense=0, power=3, xp=35),
         "TROLL"     : Fighter(hp=16, defense=1, power=4, xp=100),
         "BASIC"     : BasicMonster(),
@@ -75,14 +76,14 @@ class MainMenuState:
             return {}
         elif new_game:
             player, entities, game_map, message_log, game_state = get_game_variables()
-            game_state = GameStates.PLAYERS_TURN
+            game_state = GameStates.INSTRUCTIONS
             return {
                 'next_stage': 'game',
                 'args': (player, entities, game_map, message_log, game_state)
             }
         elif load_saved_game:
             try:
-                player, entities, game_map, message_log, game_state = load_game()
+                # player, entities, game_map, message_log, game_state = load_game()
                 return {
                     'next_stage': 'game',
                     'args': (player, entities, game_map, message_log, game_state)

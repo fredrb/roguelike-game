@@ -1,7 +1,32 @@
 import tcod as libtcod
 
-def menu(con, header, options, width, screen_width, screen_height):
-    if len(options) > 26: raise ValueError('Cannot have a menu with more than 26 options')
+def render_option(option_text, index, window, y):
+    text = '(' + str(index) + ') ' + option_text
+    libtcod.console_print_ex(window, 0, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
+
+def render_shopoption(option, index, window, y):
+    x = 0
+    text = '(' + str(index) + '):'
+    libtcod.console_set_default_foreground(window, libtcod.white)
+    libtcod.console_print_ex(window, 0, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
+    x += len(str(index))+3
+    price = '%i gp' % option.price
+    libtcod.console_set_default_foreground(window, libtcod.light_yellow)
+    libtcod.console_print_ex(window, x, y, libtcod.BKGND_NONE, libtcod.LEFT, price)
+    x += len(price)+1
+
+    libtcod.console_set_default_foreground(window, libtcod.cyan)
+    libtcod.console_print_ex(window, x, y, libtcod.BKGND_NONE, libtcod.LEFT, option.bonus)
+    x += len(option.bonus)+1
+
+    libtcod.console_set_default_foreground(window, libtcod.white)
+    libtcod.console_print_ex(window, x, y, libtcod.BKGND_NONE, libtcod.LEFT, option.name)
+
+
+def menu(con, header, options, width, screen_width, screen_height,
+         render_func=render_option):
+    if len(options) > 26: 
+        raise ValueError('Cannot have a menu with more than 26 options')
 
     header_height = libtcod.console_get_height_rect(con, 0, 0, width, screen_height, header)
     height = len(options) + header_height
@@ -13,19 +38,20 @@ def menu(con, header, options, width, screen_width, screen_height):
 
     y = header_height
     index = 1
-    for option_text in options:
-        text = '(' + str(index) + ') ' + option_text
-        libtcod.console_print_ex(window, 0, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
-        y += 1
+    for option in options:
+        render_func(option, index, window, y)
         index += 1
+        y += 1
 
     x = int(screen_width / 2 - width / 2)
     y = int(screen_height / 2 - height / 2)
     libtcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
 
+
 def shop_menu(con, player, shop, screen_width, screen_height):
-    options = [opt.text for opt in shop.options]
-    menu(con, shop.get_message(), options, 50, screen_width, screen_height)
+    menu(con, shop.get_message(), shop.options, 50, screen_width,
+         screen_height, render_func=render_shopoption)
+
 
 def inventory_menu(con, header, player, inventory_width, screen_width, screen_height):
     if len(player.inventory.items) == 0:
@@ -57,35 +83,152 @@ def character_screen(player, character_screen_width, character_screen_height, sc
     y = screen_height // 2 - character_screen_height // 2
     libtcod.console_blit(window, 0, 0, character_screen_width, character_screen_height, 0, x, y, 1.0, 0.7)
 
+
 def help_menu(con, screen_width):
-    con.draw_frame(0, 2, screen_width, 30, "Instructions", True, libtcod.white, libtcod.dark_grey)
-    libtcod.console_set_default_foreground(con, libtcod.white)
-    con.vline(int(screen_width/2)-1, 3, 40)
+    window = libtcod.console_new(screen_width, 50)
+    window.draw_frame(0, 2, screen_width, 30, "Instructions", True,
+                      libtcod.white, libtcod.black)
+    libtcod.console_set_default_foreground(window, libtcod.white)
+    window.vline(int(screen_width/2)-1, 3, 25)
 
-    explained(con, " ", "ACTIVE TOMES:", 1, 3, libtcod.white, libtcod.light_grey, int(screen_width/2))
-    explained(con, "#", "Healing Tome", 1, 4, libtcod.violet, libtcod.white, int(screen_width/2))
-    explained(con, "#", "Magic Missile Tome", 1, 5, libtcod.light_cyan, libtcod.white, int(screen_width/2))
-    explained(con, "#", "Paralysis Tome", 1, 6, libtcod.pink, libtcod.white, int(screen_width/2))
-    explained(con, "#", "Fireball Tome", 1, 7, libtcod.red, libtcod.white, int(screen_width/2))
+    col_size = int(screen_width/2)
 
-    explained(con, " ", "PASSIVE TOMES", 1, 9, libtcod.white, libtcod.light_grey, int(screen_width/2))
-    explained(con, " ", "Strength", 1, 10, libtcod.white, libtcod.white, int(screen_width/2))
-    explained(con, " ", "Defense", 1, 11, libtcod.white, libtcod.white, int(screen_width/2))
-    explained(con, " ", "Vitality", 1, 12, libtcod.pink, libtcod.white, int(screen_width/2))
-    explained(con, " ", "Magic Power", 1, 13, libtcod.red, libtcod.white, int(screen_width/2))
+    col_a = 5
+    col_b = col_size+2
 
-    explained(con, " ", "INTERACTIVE ITEMS", 1, 15, libtcod.white, libtcod.light_grey, int(screen_width/2))
-    explained(con, "C", "Chest", 1, 16, libtcod.darker_orange, libtcod.white, int(screen_width/2))
-    explained(con, ">", "Stairs", 1, 17, libtcod.white, libtcod.white, int(screen_width/2))
-    explained(con, "@", "Shopkeeper", 1, 19, libtcod.blue, libtcod.white, int(screen_width/2))
+    line = 4
+    explained(window, " ", "KEYBINDING", col_a, line, libtcod.white,
+              libtcod.light_yellow, int(screen_width/2))
+    line += 1
+    explained(window, "W", ": Move Up", col_a, line, libtcod.light_yellow,
+              libtcod.white, col_size)
+    line += 1
+    explained(window, "A", ": Move Left", col_a, line, libtcod.light_yellow,
+              libtcod.white, col_size)
+    line += 1
+    explained(window, "S", ": Move Down", col_a, line, libtcod.light_yellow,
+              libtcod.white, col_size)
+    line += 1
+    explained(window, "D", ": Move Right", col_a, line, libtcod.light_yellow,
+              libtcod.white, col_size)
+    line += 1
+    explained_longer(window, "1-4", ": Use active tomes", 3, line, libtcod.light_yellow,
+              libtcod.white, col_size, 3)
+
+    line += 1
+    explained_longer(window, "SPACE", ": Take stairs", 1, line, libtcod.light_yellow,
+              libtcod.white, col_size, 5)
+    line += 1
+    explained_longer(window, "ENTER", ": Take stairs", 1, line, libtcod.light_yellow,
+              libtcod.white, col_size, 5)
+    line += 1
+    explained_longer(window, "MOUSE", ": Aim target spell", 1, line, libtcod.light_yellow,
+              libtcod.white, col_size, 5)
+    line += 1
+    explained(window, "?", ": See this window", col_a, line, libtcod.light_yellow,
+              libtcod.white, col_size)
+
+    line += 2
+    explained(window, " ", "INTERACT",
+              col_a, line, libtcod.light_grey, libtcod.light_yellow, col_size)
+    line += 1
+    explained(window, " ", "Move towards objects to interact",
+              col_a-3, line, libtcod.light_grey, libtcod.white, col_size)
+    line += 1
+    explained(window, " ", " - Pick up item",
+              col_a-3, line, libtcod.light_grey, libtcod.light_grey, col_size)
+    line += 1
+    explained(window, " ", " - Attack monster",
+              col_a-3, line, libtcod.light_grey, libtcod.light_grey, col_size)
+    line += 1
+    explained(window, " ", " - Browse shop",
+              col_a-3, line, libtcod.light_grey, libtcod.light_grey, col_size)
+    line += 1
+    explained(window, " ", " - Open chest",
+              col_a-3, line, libtcod.light_grey, libtcod.light_grey, col_size)
+
+    line += 2
+    explained(window, "!", " Try to survive as many",
+              col_a-3, line, libtcod.red, libtcod.white, col_size)
+    line += 1
+    explained(window, " ", "  levels as possible",
+              col_a-3, line, libtcod.red, libtcod.white, col_size)
+    line += 1
+    explained(window, "!", " Boss every 7 levels",
+              col_a-3, line, libtcod.red, libtcod.white, col_size)
 
 
+    line = 4
+    explained(window, " ", "ACTIVE TOMES:", col_b, line, libtcod.white,
+              libtcod.light_yellow, int(screen_width/2))
+    line += 1
+    explained(window, " ", "Found around the map", col_b, line, libtcod.white,
+              libtcod.light_grey, int(screen_width/2))
+    line += 1
 
-def explained(con, key, value, x, y, key_color, value_color, area_width):
+    explained(window, "#", "Healing Tome", col_b, line, libtcod.violet,
+              libtcod.white, int(screen_width/2))
+    line += 1
+    explained(window, "#", "Magic Missile Tome", col_b, line, libtcod.light_cyan,
+              libtcod.white, int(screen_width/2))
+    line += 1
+    explained(window, "#", "Paralysis Tome", col_b, line, libtcod.pink,
+              libtcod.white, int(screen_width/2))
+    line += 1
+    explained(window, "#", "Fireball Tome", col_b, line, libtcod.red,
+              libtcod.white, int(screen_width/2))
+    line += 2
+
+    explained(window, " ", "PASSIVE TOMES", col_b, line, libtcod.white,
+              libtcod.light_yellow, int(screen_width/2))
+    line += 1
+    explained(window, " ", "Bought at the shopkeeper", col_b, line, libtcod.white,
+              libtcod.light_grey, int(screen_width/2))
+    line += 1
+    explained(window, " ", "Strength", col_b, line, libtcod.white,
+              libtcod.white, int(screen_width/2))
+    line += 1
+    explained(window, " ", "Defense", col_b, line, libtcod.white,
+              libtcod.white, int(screen_width/2))
+    line += 1
+    explained(window, " ", "Vitality", col_b, line, libtcod.pink,
+              libtcod.white, int(screen_width/2))
+    line += 1
+    explained(window, " ", "Magic Power", col_b, line, libtcod.red,
+              libtcod.white, int(screen_width/2))
+    line += 2
+
+    explained(window, " ", "INTERACTIVE ITEMS", col_b, line, libtcod.white,
+              libtcod.light_yellow, int(screen_width/2))
+    line += 1
+    explained(window, " ", "Found around the map", col_b, line, libtcod.white,
+              libtcod.light_grey, int(screen_width/2))
+    line += 1
+    explained(window, "C", "Chest", col_b, line, libtcod.darker_orange,
+              libtcod.white, int(screen_width/2))
+    line += 1
+    explained(window, ">", "Stairs", col_b, line, libtcod.white,
+              libtcod.white, int(screen_width/2))
+    line += 1
+    explained(window, "@", "Shopkeeper", col_b, line, libtcod.blue,
+              libtcod.white, int(screen_width/2))
+
+    window.print_box(int((screen_width/2)-15), 29, 30, 1, "Press any key to start",
+                     libtcod.light_yellow, libtcod.black,
+                     libtcod.BKGND_NONE, libtcod.CENTER)
+
+    libtcod.console_blit(window, 0, 0, screen_width, 32, 0, 0, 7, 1.0, 0.9)
+
+
+def explained_longer(con, key, value, x, y, key_color, value_color, area_width, key_width):
     libtcod.console_set_default_foreground(con, key_color)
     libtcod.console_print_ex(con, x, y, libtcod.BKGND_NONE, libtcod.LEFT, key)
     libtcod.console_set_default_foreground(con, value_color)
-    libtcod.console_print_ex(con, x+1, y, libtcod.BKGND_NONE, libtcod.LEFT, value)
+    libtcod.console_print_ex(con, x+key_width, y, libtcod.BKGND_NONE, libtcod.LEFT, value)
+
+
+def explained(con, key, value, x, y, key_color, value_color, area_width):
+    explained_longer(con, key, value, x, y, key_color, value_color, area_width, 1)
 
 
 def key_value(con, key, value, x, y, key_color, value_color, area_width):

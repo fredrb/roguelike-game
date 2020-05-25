@@ -111,7 +111,10 @@ def cast_paralysis(*args, **kwargs):
 
     for entity in entities:
         if entity.x == target_x and entity.y == target_y and entity.ai:
-            turns = 10 + math.ceil(caster.fighter.base_magic/10) 
+
+            factor = caster.fighter.base_magic
+            extra_turns = math.ceil(math.log(factor, 10) + math.ceil(factor/100))
+            turns = 2 + extra_turns
             confused_ai = ParalysedMonster(entity.ai, turns)
             confused_ai.owner = entity
             entity.ai = confused_ai

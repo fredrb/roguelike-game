@@ -45,7 +45,7 @@ class GoblinFactory(MonsterFactory):
 
 class GoblinWarriorFactory(MonsterFactory):
     def __init__(self):
-        super().base_monster(10, 3, 0, 2, 1, 2)
+        super().base_monster(9, 3, 0, 2, 1, 2)
     
     def make(self, level, boss):
         monster = Entity(0, 0, 'g', tcod.dark_green, 'Goblin Warrior', True,
@@ -58,7 +58,7 @@ class GoblinWarriorFactory(MonsterFactory):
 
 class GoblinWarlockFactory(MonsterFactory):
     def __init__(self):
-        super().base_monster(20, 4, 1, 2, 1, 2)
+        super().base_monster(15, 4, 1, 2, 1, 2)
 
     def make(self, level, boss):
         monster = Entity(0, 0, 'w', tcod.purple, 'Goblin Warlock', True,
@@ -71,7 +71,7 @@ class GoblinWarlockFactory(MonsterFactory):
 
 class GoblinChiefFactory(MonsterFactory):
     def __init__(self):
-        super().base_monster(20, 3, 2, 2, 3, 2)
+        super().base_monster(18, 3, 2, 2, 3, 2)
     
     def make(self, level, boss):
         monster = Entity(0, 0, 'G', tcod.dark_green, 'Goblin Chief', True,
@@ -84,7 +84,7 @@ class GoblinChiefFactory(MonsterFactory):
 
 class TrollFactory(MonsterFactory):
     def __init__(self):
-        super().base_monster(40, 4, 3, 3, 5, 2)
+        super().base_monster(30, 4, 3, 4, 4, 3)
     
     def make(self, level, boss):
         monster = Entity(0, 0, 'T', tcod.light_red, 'Troll', True,
@@ -110,7 +110,7 @@ class TrollShamanFactory(MonsterFactory):
 
 class TrollChiefFactory(MonsterFactory):
     def __init__(self):
-        super().base_monster(60, 6, 5, 10, 12, 10)
+        super().base_monster(120, 20, 10, 10, 8, 8)
     
     def make(self, level, boss):
         monster = Entity(0, 0, 'T', tcod.dark_red, 'Troll Chief', True,
@@ -168,6 +168,7 @@ def make_monster(name, level, boss=False):
     factory_map = {
         'goblin': GoblinFactory(),
         'troll': TrollFactory(),
+        'troll_chief': TrollChiefFactory(),
         'warlock': GoblinWarlockFactory(),
         'shaman': TrollShamanFactory(),
         'dragon': DragonFactory(),
@@ -177,19 +178,19 @@ def make_monster(name, level, boss=False):
     return factory_map[name].make(level, boss)
 
 def make_monster_random(level):
-    if level == 1:
+    if level < 3:
         return random.choice([GoblinFactory(), GoblinWarriorFactory()]).make(level, False) 
-    elif level < 3:
-        return random.choice([GoblinFactory(), GoblinWarriorFactory(), GoblinWarlockFactory()]).make(level, False) 
     elif level < 6:
-        return random.choice([GoblinFactory(), GoblinWarriorFactory(), GoblinWarlockFactory(), GoblinChiefFactory()]).make(level, False) 
+        return random.choice([GoblinFactory(), GoblinWarriorFactory(), GoblinWarlockFactory()]).make(level, False) 
     elif level < 8:
+        return random.choice([GoblinFactory(), GoblinWarriorFactory(), GoblinWarlockFactory(), GoblinChiefFactory()]).make(level, False) 
+    elif level < 10:
         return random.choice([GoblinWarriorFactory(), GoblinWarlockFactory(), GoblinChiefFactory(), TrollFactory()]).make(level, False) 
     elif level < 12:
         return random.choice([GoblinWarlockFactory(), GoblinChiefFactory(), TrollFactory(), TrollShamanFactory()]).make(level, False) 
-    elif level < 18:
+    elif level < 21:
         return random.choice([GoblinWarlockFactory(), TrollFactory(), TrollChiefFactory(), TrollShamanFactory(), DragonFactory()]).make(level, False) 
-    elif level < 22:
+    elif level < 30:
         return random.choice([TrollFactory(), TrollChiefFactory(), DragonFactory(), RedDragonFactory()]).make(level, False) 
     else:
         return random.choice([DragonFactory(), RedDragonFactory()]).make(level, False) 

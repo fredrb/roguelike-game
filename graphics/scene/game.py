@@ -201,9 +201,6 @@ class GameScene:
             tcod.console_print_ex(upper_bar, 69, 2, tcod.BKGND_NONE, tcod.LEFT, '%i' % state.player.fighter.base_defense)
             tcod.console_print_ex(upper_bar, 69, 3, tcod.BKGND_NONE, tcod.LEFT, '%i' % state.player.fighter.base_magic)
 
-            if state.game_state == GameStates.INSTRUCTIONS:
-                help_menu(con, CONFIG.get('WIDTH'))
-
             # Print all consoles
             tcod.console_blit(self.owner.upper_bar, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('UPPER_BAR_HEIGHT'), 0, 0, 0)
             tcod.console_blit(self.owner.con, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('MAP_HEIGHT'), 0, 0, CONFIG.get('MAP_Y'))
@@ -211,6 +208,9 @@ class GameScene:
             tcod.console_blit(self.owner.hotkeys, 0, 0, CONFIG.get('WIDTH'), CONFIG.get('ACTION_HEIGHT'), 0, 0, CONFIG.get('ACTION_Y'))
 
             # Overlay menus
+            if state.game_state == GameStates.INSTRUCTIONS:
+                help_menu(con, CONFIG.get('WIDTH'))
+
             if state.game_state == GameStates.SHOP:
                 shop_menu(con, state.player, state.game_map.shopkeeper.shop, CONFIG.get('WIDTH'), CONFIG.get('HEIGHT'))
 

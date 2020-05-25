@@ -47,7 +47,8 @@ def main():
             render.clear()
             args = result.get('args')
             current_stage = stages.get(next_stage)
-            current_stage.load(args)
+            if args:
+                current_stage.load(args)
         elif result.get('exit_game'):
             raise SystemExit()
 
