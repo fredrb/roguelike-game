@@ -134,6 +134,8 @@ class GameMap:
         new_room = Rect(10, 10, 10, 10)
         self.create_room(new_room)
 
+        
+
         player.x = 12
         player.y = 15
 
@@ -188,7 +190,46 @@ class GameMap:
             entities.append(warlock1)
             entities.append(warlock2)
 
+    def make_light_example(self, player, entities):
+        player.x = 12
+        player.y = 12
+        new_room = Rect(10, 10, 10, 10)
+        self.create_room(new_room)
+        new_room_2 = Rect(25, 5, 10, 20)
+        self.create_room(new_room_2)
+
+        self.create_tunnel(20, 25, 15, True)
+
+        self.tiles[27][12].blocked = True
+        self.tiles[27][12].block_sight = True
+
+        self.tiles[29][12].blocked = True
+        self.tiles[29][12].block_sight = True
+
+        self.tiles[31][12].blocked = True
+        self.tiles[31][12].block_sight = True
+
+        self.tiles[33][12].blocked = True
+        self.tiles[33][12].block_sight = True
+
+        self.tiles[27][18].blocked = True
+        self.tiles[27][18].block_sight = True
+
+        self.tiles[29][18].blocked = True
+        self.tiles[29][18].block_sight = True
+
+        self.tiles[31][18].blocked = True
+        self.tiles[31][18].block_sight = True
+
+        self.tiles[33][18].blocked = True
+        self.tiles[33][18].block_sight = True
+
+
+
+
     def make_map(self, max_rooms, min_size, max_size, player, entities, max_monsters, max_items, components):
+        if False:
+            return self.make_light_example(player, entities)
         if ((self.dungeon_level % 7) == 0):
             return self.make_boss_map(player, entities)
         rooms = []

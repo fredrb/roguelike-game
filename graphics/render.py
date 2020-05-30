@@ -1,9 +1,27 @@
 import tcod
+import sys
+import os
+
 from globals import CONFIG
 
+
 class Render:
+
+    @staticmethod
+    def resource_path(relative_path):
+        """ Get absolute path to resource, works for dev and for PyInstaller """
+        try:
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+
+        return os.path.join(base_path, relative_path)
+
+
     def __init__(self):
-        tcod.console_set_custom_font(CONFIG.get("FONT_PATH"),
+        res = Render.resource_path(CONFIG.get("FONT_PATH"))
+        tcod.console_set_custom_font(res,
             tcod.FONT_TYPE_GREYSCALE | tcod.FONT_LAYOUT_TCOD)
         self.root = None
         self.con = None

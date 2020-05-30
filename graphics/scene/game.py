@@ -195,7 +195,7 @@ class GameScene:
 
             upper_bar.print_box(60, 1, 9, 1, 'Power:', tcod.light_grey, tcod.black, tcod.BKGND_NONE, tcod.RIGHT)
             upper_bar.print_box(60, 2, 9, 1, 'Defense:', tcod.light_grey, tcod.black, tcod.BKGND_NONE, tcod.RIGHT)
-            upper_bar.print_box(60, 3, 9, 1, 'Maigc:', tcod.light_grey, tcod.black, tcod.BKGND_NONE, tcod.RIGHT)
+            upper_bar.print_box(60, 3, 9, 1, 'Magic:', tcod.light_grey, tcod.black, tcod.BKGND_NONE, tcod.RIGHT)
             tcod.console_set_default_foreground(upper_bar, tcod.white)
             tcod.console_print_ex(upper_bar, 69, 1, tcod.BKGND_NONE, tcod.LEFT, '%i' % state.player.fighter.base_power)
             tcod.console_print_ex(upper_bar, 69, 2, tcod.BKGND_NONE, tcod.LEFT, '%i' % state.player.fighter.base_defense)
