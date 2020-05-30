@@ -1,10 +1,6 @@
 import tcod as libtcod
 from globals import GameStates, CONFIG 
 
-# TODO: Should have more explicit events
-# Show inventory -> Toggle Inventory
-# Exit -> Leave Game
-
 def handle_main_menu(key):
     if key == ord('1'):
         return {'new_game': True}
